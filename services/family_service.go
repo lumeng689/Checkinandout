@@ -23,7 +23,7 @@ const (
 
 // GuardianAddForm - Input(Add) Form for Guardian
 type GuardianAddForm struct {
-	PhoneNum  string `json:"phone_num"`
+	PhoneNum  string `json:"phone_num" validate:"required,phone_num"`
 	Email     string `json:"email"`
 	FirstName string `json:"first_name"`
 	LastName  string `json:"last_name"`

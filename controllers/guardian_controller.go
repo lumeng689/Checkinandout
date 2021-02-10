@@ -1,11 +1,13 @@
 package controllers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 
 	svc "cloudminds.com/harix/cc-server/services"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -34,6 +36,23 @@ func (s *CCServer) AddGuardian(c *gin.Context) {
 	// Assign new ID to the guardian
 	var gAddForm svc.GuardianAddForm
 	c.BindJSON(&gAddForm)
+
+	err = s.Validator.v.Struct(gAddForm)
+
+	if err != nil {
+		var badInput bool = false
+		for _, e := range err.(validator.ValidationErrors) {
+			badInput = true
+			log.Println(e)
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": fmt.Sprint(e.Translate(*s.Validator.trans)),
+			})
+		}
+		if badInput {
+			return
+		}
+	}
+
 	newGuardian := svc.GetNewGuardian(gAddForm)
 	// register RegCode for the Guardian in DB
 	_, err = svc.CreateRegCodeByGuardianID(newGuardian.ID.Hex())

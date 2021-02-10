@@ -12,10 +12,10 @@ import (
 // InstitutionForm - Input Form for Institution
 type InstitutionForm struct {
 	Type    int    `json:"type"`
-	Name    string `json:"name"`
-	Address string `json:"address"`
-	State   string `json:"state"`
-	ZipCode string `bson:"zip_code" json:"zip_code"`
+	Name    string `json:"name" validate:"required,min=2,max=100"`
+	Address string `json:"address" validate:"required,min=5,max=100"`
+	State   string `json:"state" validate:"required,state"`
+	ZipCode string `bson:"zip_code" json:"zip_code" validate:"required,zip_code"`
 }
 
 // Institution - DB Model for Institution

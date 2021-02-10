@@ -2,11 +2,13 @@ package controllers
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"net/http"
 
 	svc "cloudminds.com/harix/cc-server/services"
 	"github.com/gin-gonic/gin"
+	"github.com/go-playground/validator/v10"
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
@@ -69,7 +71,23 @@ func (s *CCServer) CreateInst(c *gin.Context) {
 	var instForm svc.InstitutionForm
 	c.BindJSON(&instForm)
 
-	_, err := svc.CreateInst(instForm)
+	err := s.Validator.v.Struct(instForm)
+
+	if err != nil {
+		var badInput bool = false
+		for _, e := range err.(validator.ValidationErrors) {
+			badInput = true
+			log.Println(e)
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": fmt.Sprint(e.Translate(*s.Validator.trans)),
+			})
+		}
+		if badInput {
+			return
+		}
+	}
+
+	_, err = svc.CreateInst(instForm)
 
 	if err != nil {
 		log.Printf("Error while inserting new Institution into DB - %v\n", err)
