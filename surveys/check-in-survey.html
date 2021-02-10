@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Required meta tags -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <style>
+    table {
+      font-family: arial, sans-serif;
+      border-collapse: collapse;
+      width: 100%;
+    }
+    
+    td, th {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+    
+    tr:nth-child(even) {
+      background-color: #dddddd;
+    }
+  </style>
+  <link rel="stylesheet" href="https://unpkg.com/bootstrap/dist/css/bootstrap.min.css"/>
+  <script src="https://unpkg.com/browse/bootstrap@4.6.0/dist/js/bootstrap.min.js"></script>
+  <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+  <script src="./check-in-survey.js"></script>
+</head>
+<body>
+  <h3>Survey Page</h3>
+  <ol>
+    <li> 
+      <h5> Are you experiencing: </h5>
+      <table>
+        <tr>
+          <th>Symptom</th>
+          <th>Apply</th>
+        </tr>
+        <tr>
+          <td id="q0">Cough?</td>
+          <td> 
+            <input type="radio" id="bool-0-0-1" name="bool-0-0" value="1">
+            <label for="bool-0-0-1">Yes</label>  
+            <input type="radio" id="bool-0-0-0" name="bool-0-0" value="0">
+            <label for="bool-0-0-0">No</label>  
+          </td>
+        </tr>
+        <tr>
+          <td  id="q1">Fever?</td>
+          <td> 
+            <input type="radio" id="bool-0-1-1" name="bool-0-1" value="1">
+            <label for="bool-0-1-1">Yes</label>  
+            <input type="radio" id="bool-0-1-0" name="bool-0-1" value="0">
+            <label for="bool-0-1-0">No</label>  
+          </td>
+        </tr>
+        <tr>
+          <td id="q2">Shortness of Breath?</td>
+          <td> 
+            <input type="radio" id="bool-0-2-1" name="bool-0-2" value="1">
+            <label for="bool-0-2-1">Yes</label>  
+            <input type="radio" id="bool-0-2-0" name="bool-0-2" value="0">
+            <label for="bool-0-2-0">No</label>  
+          </td>
+        </tr>
+        <tr>
+          <td id="q3">Sore Throat?</td>
+          <td> 
+            <input type="radio" id="bool-0-3-1" name="bool-0-3" value="1">
+            <label for="bool-0-3-1">Yes</label>  
+            <input type="radio" id="bool-0-3-0" name="bool-0-3" value="0">
+            <label for="bool-0-3-0">No</label>  
+          </td>
+        </tr>
+        <tr>
+          <td id="q4">Diarrhea?</td>
+          <td> 
+            <input type="radio" id="bool-0-4-1" name="bool-0-4" value="1">
+            <label for="bool-0-4-1">Yes</label>  
+            <input type="radio" id="bool-0-4-0" name="bool-0-4" value="0">
+            <label for="bool-0-4-0">No</label>  
+          </td>
+        </tr>
+        <tr>
+          <td id="q5">Headaches?</td>
+          <td> 
+            <input type="radio" id="bool-0-5-1" name="bool-0-5" value="1">
+            <label for="bool-0-5-1">Yes</label>  
+            <input type="radio" id="bool-0-5-0" name="bool-0-5" value="0">
+            <label for="bool-0-5-0">No</label>  
+          </td>
+        </tr>
+        <tr>
+          <td id="q6">Unusual Fatigue?</td>
+          <td> 
+            <input type="radio" id="bool-0-6-1" name="bool-0-6" value="1">
+            <label for="bool-0-6-1">Yes</label>  
+            <input type="radio" id="bool-0-6-0" name="bool-0-6" value="0">
+            <label for="bool-0-6-0">No</label>  
+          </td>
+        </tr>
+        <tr>
+          <td id="q7">Loss of taste or smell?</td>
+          <td> 
+            <input type="radio" id="bool-0-7-1" name="bool-0-7" value="1">
+            <label for="bool-0-7-1">Yes</label>  
+            <input type="radio" id="bool-0-7-0" name="bool-0-7" value="0">
+            <label for="bool-0-7-0">No</label>  
+          </td>
+        </tr>
+      </table>
+    </li>
+    <li>
+      <div id="q8">Have you traveled out of the country in the last 14 day?</div>
+      <p>
+        <input type="radio" id="bool-1-0-1" name="bool-1" value="1">
+        <label for="bool-1-0-1">Yes</label>  
+        <input type="radio" id="bool-1-0-0" name="bool-1" value="0">
+        <label for="bool-1-0-0">No</label>  
+      </p>
+    </li>
+    <li>
+      <div id="q9">Have you been in contact with anyone who has traveled outside the country?</div>
+      <p>
+        <input type="radio" id="bool-2-0-1" name="bool-2" value="1">
+        <label for="bool-2-0-1">Yes</label>  
+        <input type="radio" id="bool-2-0-0" name="bool-2" value="0">
+        <label for="bool-2-0-0">No</label>  
+      </p>
+    </li>
+    <li>
+      <div id="q10">Have you been diagnosed to the Covid-19 Disease?</div>
+      <p>
+        <input type="radio" id="bool-3-0-1" name="bool-3" value="1">
+        <label for="bool-3-0-1">Yes</label>  
+        <input type="radio" id="bool-3-0-0" name="bool-3" value="0">
+        <label for="bool-3-0-0">No</label>  
+      </p>
+    </li>
+    <li>
+      <div id="q11">Have you been exposed to the Covid-19 Disease?</div>
+      <p>
+        <input type="radio" id="bool-4-0-1" name="bool-4" value="1">
+        <label for="bool-4-0-1">Yes</label>  
+        <input type="radio" id="bool-4-0-0" name="bool-4" value="0">
+        <label for="bool-4-0-0">No</label>  
+      </p>
+    </li>
+    <li>
+      <div id="q12">Have you been tested for the Covid-19?</div>
+      <p>
+        <input type="radio" id="bool-5-0-1" name="bool-5" value="1">
+        <label for="bool-5-0-1">Yes</label>  
+        <input type="radio" id="bool-5-0-0" name="bool-5" value="0">
+        <label for="bool-5-0-0">No</label>  
+      </p>
+    </li>
+    <li>
+      <div id="q13">Have you been around anyone with cough, cold, fever, SOB, or potentially may have Covid-19?</div>
+      <p>
+        <input type="radio" id="bool-6-0-1" name="bool-6" value="1">
+        <label for="bool-6-0-1">Yes</label>  
+        <input type="radio" id="bool-6-0-0" name="bool-6" value="0">
+        <label for="bool-6-0-0">No</label>  
+      </p>
+    </li>
+    <li>
+      <div id="q14">What is the reason for your visit today?</div>
+      <p>
+        <textarea style="width: 80%;" id="text-0-0" rows="7"></textarea>
+      </p>
+    </li>
+  </ol>
+  <button type="submit" onClick="submitSurvey()">Submit</button>
+</body>
+</html>

@@ -1,0 +1,1 @@
+start mongod --dbpath=./data && start ./cc-server.exe

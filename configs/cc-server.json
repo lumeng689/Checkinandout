@@ -1,0 +1,6 @@
+{
+    "log_file_name": "log.json",
+    "services": {
+        "mongo_server_uri": "mongodb://localhost:27017"
+    }
+}
