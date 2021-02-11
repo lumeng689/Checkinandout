@@ -12,3 +12,8 @@
 2. In cmd, run `.\cc-server.exe`
 3. A portal website will be hosted at `localhost:8000\#\cc-records`. Please open the url in browser to use it
 
+### Update Twilio SMS Token:
+1. Login to `mongo` shell, and switch db by `use go_mongo`
+2. Update the Token using the following shell command:
+`> db.configs.update({name: "default"}, {$set: {sms_auth_token: "65a64755b83eb1e8e6ece4a7e7b6bce7"}})` 
+If Succeed, the shell returns info: `WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })`

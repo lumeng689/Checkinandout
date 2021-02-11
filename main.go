@@ -17,7 +17,9 @@ func main() {
 	ccServer.InitConfig(appName)
 	// Database
 	ccServer.Connect()
+	ccServer.ReloadConfig()
 
+	log.Printf("AuthToken is - %v\n", ccServer.Config.SMSConf.AuthToken)
 	// Init router
 	r := gin.Default()
 

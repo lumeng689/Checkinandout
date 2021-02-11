@@ -4,7 +4,9 @@ import (
 	"log"
 	"path/filepath"
 
+	svc "cloudminds.com/harix/cc-server/services"
 	"github.com/spf13/viper"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 // EmailConfig - for sending Email to activate user
@@ -38,7 +40,7 @@ var defaulEmailConfig = EmailConfig{
 
 var defaultSMSConfig = SMSConfig{
 	AccountSid:   "AC61389296221b860447ed00967abf77b5",
-	AuthToken:    "7954afc32cf75da3d1a387455a316461",
+	AuthToken:    "65a64755b83eb1e8e6ece4a7e7b6bce7",
 	FromPhoneNum: "+19169933295",
 }
 
@@ -66,4 +68,21 @@ func (s *CCServer) InitConfig(appName string) {
 	}
 
 	s.Config = config
+}
+
+// ReloadConfig - reload hot-reloadable configs from DB
+func (s *CCServer) ReloadConfig() {
+	var reloadedConfig svc.Config
+	err := svc.GetConfigByName("default").Decode(&reloadedConfig)
+
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			log.Println("Default Config does not exist")
+			return
+		}
+		log.Println("Error while getting Default Config by Name")
+		return
+	}
+
+	s.Config.SMSConf.AuthToken = reloadedConfig.SMSAuthToken
 }
