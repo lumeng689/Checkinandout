@@ -22,10 +22,19 @@
         <div class="shadow move"></div>
         <div class="message">
           <h1 class="alert">Check-In Failed!</h1>
-          <p>You did NOT pass the screening test. Please exit and contact your health supervisor. Thanks for your coorperation! </p>
+          <p>
+            You did NOT pass the screening test. Please exit and contact your
+            health supervisor. Thanks for your coorperation!
+          </p>
         </div>
         <button class="button-box"><h1 class="red">try again</h1></button>
       </div>
     </div>
   </body>
+  <script>
+    const gatekeeperHome = 'gatekeeper://gohome';
+    setTimeout(() => {
+      window.location.replace(gatekeeperHome);
+    }, 4000);
+  </script>
 </html>
