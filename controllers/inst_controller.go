@@ -45,7 +45,7 @@ func (s *CCServer) GetInstByID(c *gin.Context) {
 
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
-			log.Printf("Admin does not exist, need to create a new one")
+			log.Printf("Institution does not exist, need to create a new one")
 			c.JSON(http.StatusForbidden, gin.H{
 				"message": "Institution does not exist, need to create a new one",
 			})
@@ -53,7 +53,6 @@ func (s *CCServer) GetInstByID(c *gin.Context) {
 		}
 		log.Printf("Error while getting institution by ID - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  http.StatusInternalServerError,
 			"message": "Something went wrong",
 		})
 		return
@@ -70,9 +69,10 @@ func (s *CCServer) GetInstByID(c *gin.Context) {
 func (s *CCServer) CreateInst(c *gin.Context) {
 	var instForm svc.InstitutionForm
 	c.BindJSON(&instForm)
+	log.Printf("instForm received - %v\n", instForm)
 
+	// Validation
 	err := s.Validator.v.Struct(instForm)
-
 	if err != nil {
 		var badInput bool = false
 		for _, e := range err.(validator.ValidationErrors) {
@@ -139,30 +139,30 @@ func (s *CCServer) DeleteInstByID(c *gin.Context) {
 	// TODO: Set CC Records to "expired"
 	idToDelete := c.Param("id")
 
-	// Check Admins
-	count, err := svc.CountAdminsByInstID(idToDelete)
-	if err != nil {
-		log.Printf("Error while finding Admins in DB - %v\n", err)
-		return
-	}
-	if count > 0 {
-		c.JSON(http.StatusForbidden, gin.H{
-			"message": "Need to remove all affliated admins before deleting the institution",
-		})
-		return
-	}
-	// Check Families
-	count, err = svc.CountFamiliesByInstID(idToDelete)
-	if err != nil {
-		log.Printf("Error while finding Families in DB - %v\n", err)
-		return
-	}
-	if count > 0 {
-		c.JSON(http.StatusForbidden, gin.H{
-			"message": "Need to remove all affliated families before deleting the institution",
-		})
-		return
-	}
+	// // Check Admins
+	// count, err := svc.CountAdminsByInstID(idToDelete)
+	// if err != nil {
+	// 	log.Printf("Error while finding Admins in DB - %v\n", err)
+	// 	return
+	// }
+	// if count > 0 {
+	// 	c.JSON(http.StatusForbidden, gin.H{
+	// 		"message": "Need to remove all affliated admins before deleting the institution",
+	// 	})
+	// 	return
+	// }
+	// // Check Families
+	// count, err = svc.CountFamiliesByInstID(idToDelete)
+	// if err != nil {
+	// 	log.Printf("Error while finding Families in DB - %v\n", err)
+	// 	return
+	// }
+	// if count > 0 {
+	// 	c.JSON(http.StatusForbidden, gin.H{
+	// 		"message": "Need to remove all affliated families before deleting the institution",
+	// 	})
+	// 	return
+	// }
 
 	// Delete the Institution
 	res, err := svc.DeleteInstByID(idToDelete)

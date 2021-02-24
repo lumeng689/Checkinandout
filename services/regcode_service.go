@@ -13,14 +13,14 @@ import (
 
 // RegCode - DB Model for Guardian Account Activation Code
 type RegCode struct {
-	ID         primitive.ObjectID `bson:"_id" json:"_id"`
-	GuardianID string             `bson:"guardian_id" json:"guardian_id"`
-	RegCode    string             `bson:"reg_code" json:"reg_code"`
+	ID       primitive.ObjectID `bson:"_id" json:"_id"`
+	MemberID string             `bson:"member_id" json:"member_id"`
+	RegCode  string             `bson:"reg_code" json:"reg_code"`
 }
 
 // GetRegCodeParams - QueryString params for RegCode
 type GetRegCodeParams struct {
-	GuardianID string `json:"guardian_id"`
+	MemberID string `json:"member_id"`
 }
 
 var regCodeCollection *mongo.Collection
@@ -36,7 +36,7 @@ func GetManyRegCodes() (*mongo.Cursor, error) {
 	return regCodeCollection.Find(context.TODO(), bson.M{})
 }
 
-// GetRegCodeByID
+// GetRegCodeByID - as is
 func GetRegCodeByID(id string) *mongo.SingleResult {
 	oid, _ := primitive.ObjectIDFromHex(id)
 	return regCodeCollection.FindOne(context.TODO(), bson.M{
@@ -44,30 +44,30 @@ func GetRegCodeByID(id string) *mongo.SingleResult {
 	)
 }
 
-// GetRegCodeByGuardianID as name suggests
-func GetRegCodeByGuardianID(guardianID string) *mongo.SingleResult {
+// GetRegCodeByMemberID as name suggests
+func GetRegCodeByMemberID(memberID string) *mongo.SingleResult {
 	// TODO: err handling for ID Parsing
 	return regCodeCollection.FindOne(context.TODO(), bson.D{
-		primitive.E{Key: "guardian_id", Value: guardianID},
+		primitive.E{Key: "member_id", Value: memberID},
 	})
 }
 
-// CreateRegCodeByGuardianID as name suggests
-func CreateRegCodeByGuardianID(guardianID string) (*mongo.InsertOneResult, error) {
+// CreateRegCodeByMemberID as name suggests
+func CreateRegCodeByMemberID(memberID string) (*mongo.InsertOneResult, error) {
 
 	newRegCode := RegCode{
-		ID:         primitive.NewObjectID(),
-		GuardianID: guardianID,
-		RegCode:    getNewRegCode(),
+		ID:       primitive.NewObjectID(),
+		MemberID: memberID,
+		RegCode:  getNewRegCode(),
 	}
 
 	return regCodeCollection.InsertOne(context.TODO(), newRegCode)
 }
 
-// DeleteRegCodeByGuardianID as name suggests
-func DeleteRegCodeByGuardianID(guardianID string) (*mongo.DeleteResult, error) {
+// DeleteRegCodeByMemberID as name suggests
+func DeleteRegCodeByMemberID(memberID string) (*mongo.DeleteResult, error) {
 	return regCodeCollection.DeleteOne(context.TODO(), bson.D{
-		primitive.E{Key: "guardian_id", Value: guardianID},
+		primitive.E{Key: "member_id", Value: memberID},
 	})
 }
 

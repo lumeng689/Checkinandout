@@ -8,14 +8,14 @@ import (
 func (s *CCServer) Routes(router *gin.Engine) {
 
 	// Institution APIs
-	router.GET("/api/institutions", s.GetManyInsts)
-	router.GET("/api/institution/:id", s.GetInstByID)
+	router.GET("api/institutions", s.GetManyInsts)
+	router.GET("api/institution/:id", s.GetInstByID)
 	router.POST("api/institution", s.CreateInst)
 	router.PUT("api/institution/:id", s.UpdateInstByID)
 	router.DELETE("api/institution/:id", s.DeleteInstByID)
 
 	// Admin APIs
-	router.GET("/api/admins", s.GetManyAdminsByInstID)
+	router.GET("api/admins", s.GetManyAdminsByInstID)
 	router.POST("api/admin/register", s.RegisterAdmin)
 	router.PUT("api/admin/:id", s.UpdateAdminByID)
 	router.DELETE("api/admin/:id", s.DeleteAdminByID)
@@ -24,26 +24,32 @@ func (s *CCServer) Routes(router *gin.Engine) {
 
 	// CC-Records APIs
 	router.GET("/api/cc-records", s.GetCCRecords)
-	router.POST("/api/cc-record/sync", s.GetOrCreateManyCCRecordsByManyWardIDs)
+	router.DELETE("/api/cc-record/:id", s.DeleteCCRecordByID)
+	router.POST("/api/cc-record/sync", s.GetOrCreateManyCCRecords)
 	router.POST("/api/cc-record/scan", s.HandleCCScanEvent)
 	router.POST("/api/cc-record/schedule", s.HandleCheckoutScheduleEvent)
-	router.DELETE("/api/cc-record/:id", s.DeleteCCRecordByID)
+
+	// Tag APIs
+	router.GET("api/tags", s.GetManyTags)
+	router.GET("api/tag", s.GetTag)
+	router.POST("api/tag", s.CreateTag)
+	router.PUT("api/tag/:id", s.UpdateTagByID)
+	router.DELETE("api/tag/:id", s.DeleteTagByID)
+
+	// Member APIs
+	router.GET("/api/members", s.GetManyMembers)
+	router.POST("/api/member", s.CreateMember)
+	router.PUT("/api/member/:id", s.UpdateMemberByID)
+	router.DELETE("/api/member/:id", s.DeleteMemberByID)
+	router.POST("/api/member/login", s.LoginMember)
+	router.POST("/api/member/activate", s.ActivateMember)
 
 	// Family APIs
 	router.GET("/api/families", s.GetManyFamilies)
-	router.GET("/api/family/:id", s.GetFamilyByID)
 	router.POST("/api/family", s.CreateFamily)
-	// router.GET("/api/families/:deviceId", controllers.GetFamilyByDeviceId)
-	router.PUT("/api/family/:id", s.UpdateFamilyInfoByID)
 	router.DELETE("/api/family/:id", s.DeleteFamilyByID)
-	router.GET("/api/family", s.GetFamilyByWardID)
-
-	// Guardian APIs
-	router.POST("/api/guardian/add-new", s.AddGuardian)
-	router.PUT("/api/guardian/:id", s.UpdateGuardianByID)
-	router.DELETE("/api/guardian/:id", s.DeleteGuardianByID)
-	router.POST("/api/guardian/login", s.LoginGuardian)
-	router.POST("/api/guardian/activate", s.ActivateGuardian)
+	router.GET("/api/family", s.GetFamily)
+	router.GET("/api/family-with-members/:id", s.GetFamilyWithMembersByID)
 
 	// Ward APIs
 	router.POST("/api/ward/add-new", s.AddWard)
@@ -57,7 +63,7 @@ func (s *CCServer) Routes(router *gin.Engine) {
 
 	// RegCode APIs
 	router.GET("/api/reg-codes", s.GetManyRegCodes)
-	router.GET("/api/reg-code", s.GetRegCodeByGuardianID)
+	router.GET("/api/reg-code", s.GetRegCodeByMemberID)
 	router.POST("/api/reg-code/email", s.SendRegCodeWithEmail)
 	router.POST("/api/reg-code/sms", s.SendRegCodeWithSMS)
 
@@ -67,7 +73,7 @@ func (s *CCServer) Routes(router *gin.Engine) {
 
 	// Export APIs
 	router.GET("/api/export/cc-records", s.ExportManyCCRecords)
-	router.GET("/api/export/wards", s.ExportManyWards)
-	router.GET("/api/export/families", s.ExportManyFamilies)
-	router.GET("/api/export/surveys", s.ExportManySurveys)
+	// router.GET("/api/export/wards", s.ExportManyWards)
+	// router.GET("/api/export/families", s.ExportManyFamilies)
+	// router.GET("/api/export/surveys", s.ExportManySurveys)
 }

@@ -26,9 +26,13 @@ type SMSConfig struct {
 
 // Config - top-level configuration structure
 type Config struct {
-	MongoServerURI string      `json:"mongo_server_uri" mapstructure:"mongo_server_uri"`
-	EmailConf      EmailConfig `json:"email_config" mapstructure:"email_config"`
-	SMSConf        SMSConfig   `json:"sms_config" mapstructure:"sms_config"`
+	MongoServerURI      string      `json:"mongo_server_uri" mapstructure:"mongo_server_uri"`
+	ServerAddr          string      `json:"server_address" mapstructure:"server_address"`
+	RequireCheckOutTemp bool        `json:"require_check_out_temperature" mapstructure:"require_check_out_temperature"`
+	RequireAdminPswd    bool        `json:"require_admin_password" mapstructure:"require_admin_password"`
+	TempThrd            float32     `json:"temperature_threshold" mapstructure:"temperature_threshold"`
+	EmailConf           EmailConfig `json:"email_config" mapstructure:"email_config"`
+	SMSConf             SMSConfig   `json:"sms_config" mapstructure:"sms_config"`
 }
 
 var defaulEmailConfig = EmailConfig{
@@ -45,9 +49,9 @@ var defaultSMSConfig = SMSConfig{
 }
 
 var defaultConfig = Config{
-	MongoServerURI: "",
-	EmailConf:      defaulEmailConfig,
-	SMSConf:        defaultSMSConfig,
+	RequireCheckOutTemp: false,
+	EmailConf:           defaulEmailConfig,
+	SMSConf:             defaultSMSConfig,
 }
 
 // InitConfig - loading global configurations from json file
@@ -66,6 +70,7 @@ func (s *CCServer) InitConfig(appName string) {
 	if err != nil {
 		log.Printf("init config failed with error - %v\n", err)
 	}
+	log.Printf("config initialized - %v\n", config)
 
 	s.Config = config
 }

@@ -18,8 +18,11 @@ func main() {
 	// Database
 	ccServer.Connect()
 	ccServer.ReloadConfig()
+	// log.Printf("AuthToken is - %v\n", ccServer.Config.SMSConf.AuthToken)
 
-	log.Printf("AuthToken is - %v\n", ccServer.Config.SMSConf.AuthToken)
+	//Validator
+	ccServer.InitValidator()
+
 	// Init router
 	r := gin.Default()
 
@@ -37,7 +40,7 @@ func main() {
 
 	// Fall Through Page
 	r.NoRoute(func(c *gin.Context) {
-		c.File("./dist/index.html")
+		c.File("./web/cc-portal/dist/index.html")
 	})
 	fmt.Println("Initializing Router")
 

@@ -3,6 +3,7 @@ package controllers
 import (
 	"log"
 	"regexp"
+	"strings"
 
 	"github.com/go-playground/locales/en"
 	ut "github.com/go-playground/universal-translator"
@@ -19,6 +20,7 @@ var regexpPhoneNum = regexp.MustCompile(`\d{3}-\d{3}-\d{4}`)
 var regexpState = regexp.MustCompile(`[A-Z]{2}`)
 var regexpZipCode = regexp.MustCompile(`\d{5}`)
 
+// InitValidator - as is
 func (s *CCServer) InitValidator() {
 
 	translator := en.New()
@@ -88,7 +90,7 @@ func (s *CCServer) InitValidator() {
 		return t
 	})
 
-	// Rule for ZipCode
+	// Report for ZipCode
 	_ = v.RegisterTranslation("zip_code", trans, func(ut ut.Translator) error {
 		return ut.Add("zip_code", "ZipCode must be 5 digits, e.g.: 90001", true)
 	}, func(ut ut.Translator, fe validator.FieldError) string {
@@ -96,6 +98,29 @@ func (s *CCServer) InitValidator() {
 		return t
 	})
 
+	// Report for TagString
+	_ = v.RegisterTranslation("tag_string", trans, func(ut ut.Translator) error {
+		return ut.Add("tag_string", "TagString not comply with rule!", true)
+	}, func(ut ut.Translator, fe validator.FieldError) string {
+		t, _ := ut.T("tag_string", fe.Field())
+		return t
+	})
+
 	s.Validator.v = v
 	s.Validator.trans = &trans
+}
+
+// RegisterTagStringValidator - dynamically load tag_string rule for each institution
+func (s *CCServer) RegisterTagStringValidator(tagStringRule string) {
+	// Convert to Regex String
+	tagStringRegex := strings.ReplaceAll(tagStringRule, `\\`, `\`)
+	log.Println("TagStringRegex - ", tagStringRegex)
+
+	// Rule for TagString
+	v := s.Validator.v
+	var regexpTagString = regexp.MustCompile(tagStringRegex)
+	_ = v.RegisterValidation("tag_string", func(fl validator.FieldLevel) bool {
+		return regexpTagString.Match([]byte(fl.Field().String()))
+	})
+
 }

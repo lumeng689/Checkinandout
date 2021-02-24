@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"html/template"
 	"log"
 	"net/http"
 	"net/smtp"
 	"strings"
+	"text/template"
 
 	svc "cloudminds.com/harix/cc-server/services"
 	"github.com/gin-gonic/gin"
@@ -62,13 +62,13 @@ func (s *CCServer) GetManyRegCodes(c *gin.Context) {
 	return
 }
 
-// GetRegCodeByGuardianID - as is
-func (s *CCServer) GetRegCodeByGuardianID(c *gin.Context) {
+// GetRegCodeByMemberID - as is
+func (s *CCServer) GetRegCodeByMemberID(c *gin.Context) {
 	var queryParams svc.GetRegCodeParams
-	queryParams.GuardianID = c.DefaultQuery("guardianID", "000000000000000000000000")
+	queryParams.MemberID = c.DefaultQuery("memberID", "000000000000000000000000")
 	// Iterate through the returned cursor
 	regCode := svc.RegCode{}
-	err := svc.GetRegCodeByGuardianID(queryParams.GuardianID).Decode(&regCode)
+	err := svc.GetRegCodeByMemberID(queryParams.MemberID).Decode(&regCode)
 
 	if err != nil {
 		log.Printf("Error while getting regcode by GuardianID - %v\n", err)
@@ -157,39 +157,6 @@ func (s *CCServer) SendRegCodeWithSMS(c *gin.Context) {
 	s.sendRegCodePostProcessing(c, sendRegCodeForm)
 }
 
-func (s *CCServer) sendRegCodePostProcessing(c *gin.Context, sendRegCodeForm SendRegCodeForm) {
-	// Update Guardian Status
-	//// Get Family
-	log.Printf("PostProcessing - sendRegCodeForm %v\n", sendRegCodeForm)
-	familyToUpdate := svc.Family{}
-	err := svc.GetFamilyByPhoneNum(sendRegCodeForm.PhoneNum).Decode(&familyToUpdate)
-	if err != nil {
-		// When no family found, return failed
-		if err == mongo.ErrNoDocuments {
-			c.JSON(http.StatusForbidden, gin.H{
-				"message": "Family does not exist, Guardian Activation failed",
-			})
-			return
-		}
-		log.Printf("Error while getting Family given PhoneNum - %v\n", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Something went wrong",
-		})
-		return
-	}
-	////Update
-	gToUpdate := s.GetGuardianInFamilyByPhoneNum(familyToUpdate, sendRegCodeForm.PhoneNum)
-	gToUpdate.Status = svc.GRegCodeSent
-	ReplaceGuardianInFamily(&familyToUpdate, *gToUpdate)
-	log.Printf("gToActivate: %v\n", gToUpdate)
-	log.Printf("familyToUpdate: %v\n", familyToUpdate)
-	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.Guardians, familyToUpdate.Wards, familyToUpdate.Vehicles)
-
-	if err != nil {
-		log.Printf("SendRegCodeWithEmail - Error while Updating Gaurdian - %v\n", err)
-	}
-}
-
 // SendRegCodeWithEmail - as is
 func (s *CCServer) handleSendRegCodeWithEmail(ec RegCodeEmailContent, toEmailAddr string) error {
 
@@ -229,6 +196,24 @@ func (s *CCServer) handleSendRegCodeWithSMS(sc RegCodeSMSContent, toPhoneNum str
 	// convert db phonenum to twilio from ("xxx-xxx-xxxx" to "+1xxxxxxxxxx")
 	toPhoneNum = "+1" + strings.ReplaceAll(toPhoneNum, "-", "")
 	message := "Hi " + sc.Name + "! Thank you for using the Check-in/Check-out screening system! " +
-		"Your Registration Code is: " + sc.RegCode + "."
+		"Your Registration Code is: " + sc.RegCode + ". " +
+		"The Mobile WebApp can be accessed at: " + s.Config.ServerAddr + "/mobile/login"
 	twilio.SendSMS(smsConfig.FromPhoneNum, toPhoneNum, message, "", "")
+}
+
+func (s *CCServer) sendRegCodePostProcessing(c *gin.Context, sendRegCodeForm SendRegCodeForm) {
+	// Update Member Status
+	// Get Member
+	err := svc.SetMemberRegCodeSentByPhoneNum(sendRegCodeForm.PhoneNum)
+	if err != nil {
+		// When no member found, return failed
+		if err == mongo.ErrNoDocuments {
+
+			log.Printf("Member Not Found, Status Changing Failed - %v\n", err)
+			return
+		}
+		log.Printf("Error while getting Member given PhoneNum - %v\n", err)
+		return
+	}
+
 }

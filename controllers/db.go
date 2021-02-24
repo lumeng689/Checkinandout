@@ -48,6 +48,8 @@ func (s *CCServer) Connect() {
 	svc.RegCodeCollection(db)
 	svc.SurveyCollection(db)
 	svc.ConfigCollection(db)
+	svc.MemberCollection(db)
+	svc.TagCollection(db)
 
 	return
 }

@@ -9,49 +9,6 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
-// GuardianStatus - ENUM for Guardian Status
-type GuardianStatus int
-
-const (
-	// GAssigned - as is
-	GAssigned GuardianStatus = 0
-	// GRegCodeSent - as is
-	GRegCodeSent = 1
-	// GActivated - as is
-	GActivated = 2
-)
-
-// GuardianAddForm - Input(Add) Form for Guardian
-type GuardianAddForm struct {
-	PhoneNum  string `json:"phone_num" validate:"required,phone_num"`
-	Email     string `json:"email"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Relation  string `json:"relation"`
-}
-
-// GuardianActivateForm - Input(Activate) Form for Guardian
-type GuardianActivateForm struct {
-	PhoneNum string `json:"phone_num"`
-	RegCode  string `json:"reg_code"`
-}
-
-// GuardianLoginForm - User should be able to login using one of "PhoneNum" or "DeviceID"
-type GuardianLoginForm struct {
-	PhoneNum string `json:"phone_num"`
-	DeviceID string `json:"device_id"`
-}
-
-// GuardianEditForm - Input(Edit) Form for Guardian
-type GuardianEditForm struct {
-	PhoneNum  string `json:"phone_num"`
-	Email     string `json:"email"`
-	DeviceID  string `json:"device_id"`
-	FirstName string `json:"first_name"`
-	LastName  string `json:"last_name"`
-	Relation  string `json:"relation"`
-}
-
 // WardForm - Input Form for Ward
 type WardForm struct {
 	FirstName string `json:"first_name"`
@@ -69,30 +26,10 @@ type VehicleForm struct {
 
 // FamilyRegForm - Input(Registration) Form for Family
 type FamilyRegForm struct {
-	InstID    string            `json:"institution_id"`
-	Guardians []GuardianAddForm `json:"guardians"`
-	Wards     []WardForm        `json:"wards"`
-	Vehicles  []VehicleForm     `json:"vehicles"`
-}
-
-// FamilyEditForm - Input(Edit) Form for Family
-type FamilyEditForm struct {
-	RegCodeSent bool   `json:"reg_code_sent"`
-	InstID      string `json:"institution_id"`
-	ContactID   string `json:"contact_id"`
-}
-
-// Guardian - DB Model for Guardian
-type Guardian struct {
-	ID          primitive.ObjectID `bson:"_id" json:"_id"`
-	PhoneNum    string             `bson:"phone_num" json:"phone_num"`
-	Email       string             `json:"email"`
-	DeviceID    string             `json:"device_id"`
-	FirstName   string             `bson:"first_name" json:"first_name"`
-	LastName    string             `bson:"last_name" json:"last_name"`
-	Relation    string             `json:"relation"`
-	LastLoginAt time.Time          `bson:"last_login_at" json:"last_login_at"`
-	Status      GuardianStatus     `json:"status"`
+	InstID   string                  `json:"institution_id"`
+	Members  []MemberInFamilyRegForm `json:"members"`
+	Wards    []WardForm              `json:"wards"`
+	Vehicles []VehicleForm           `json:"vehicles"`
 }
 
 // Ward - DB Model for Ward
@@ -114,15 +51,13 @@ type Vehicle struct {
 
 // Family is the top-level struct, consisting of Guardians and Wards
 type Family struct {
-	ID             primitive.ObjectID `bson:"_id" json:"_id"`
-	AllRegCodeSent bool               `json:"all_reg_code_sent"`
-	InstID         string             `bson:"institution_id" json:"institution_id"`
-	ContactID      string             `bson:"contact_id" json:"contact_id"`
-	Guardians      []Guardian         `json:"guardians"`
-	Wards          []Ward             `json:"wards"`
-	Vehicles       []Vehicle          `json:"vehicles"`
-	CreatedAt      time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt      time.Time          `bson:"updated_at" json:"updated_at"`
+	ID                primitive.ObjectID `bson:"_id" json:"_id"`
+	InstID            string             `bson:"institution_id" json:"institution_id"`
+	AllRegCodeSent    bool               `json:"all_reg_code_sent"`
+	ContactMemberInfo MemberTagInfo      `bson:"contact_member_info" json:"contact_member_info"`
+	Wards             []Ward             `json:"wards"`
+	Vehicles          []Vehicle          `json:"vehicles"`
+	ModifiedAt        time.Time          `bson:"modified_at" json:"modified_at"`
 }
 
 // GetFamilyParams - QueryString Params for GetFamily
@@ -131,7 +66,7 @@ type GetFamilyParams struct {
 }
 
 // AddGuardianParams - QueryString Params for AddGuardian
-type AddGuardianParams struct {
+type AddMemberInFamilyParams struct {
 	FamilyID string `json:"family_id"`
 }
 
@@ -162,30 +97,25 @@ func GetManyFamilies(params *GetFamilyParams) (*mongo.Cursor, error) {
 }
 
 // CreateFamily register a new Family in the DB
-func CreateFamily(f FamilyRegForm, gs []Guardian, ws []Ward, vs []Vehicle) (*mongo.InsertOneResult, error) {
+func CreateFamily(f FamilyRegForm, cMember MemberInFamilyRegForm, ws []Ward, vs []Vehicle) (*mongo.InsertOneResult, error) {
 	// log.Printf("family to be created - %v\n", family.Guardians)
+	cMemberInfo := MemberTagInfo{
+		Name:     cMember.FirstName + " " + cMember.LastName,
+		PhoneNum: cMember.PhoneNum,
+		Relation: cMember.Relation,
+	}
 
 	newFamily := Family{
-		ID:             primitive.NewObjectID(),
-		AllRegCodeSent: false,
-		InstID:         f.InstID,
-		ContactID:      gs[0].ID.Hex(),
-		Guardians:      gs,
-		Wards:          ws,
-		Vehicles:       vs,
-		CreatedAt:      time.Now(),
+		ID:                primitive.NewObjectID(),
+		InstID:            f.InstID,
+		AllRegCodeSent:    false,
+		ContactMemberInfo: cMemberInfo,
+		Wards:             ws,
+		Vehicles:          vs,
+		ModifiedAt:        time.Now(),
 	}
 
 	return familyCollection.InsertOne(context.TODO(), newFamily)
-}
-
-// GetFamilyByPhoneNum searches & returns a Family with Guardian matching the phone number
-func GetFamilyByPhoneNum(phoneNum string) *mongo.SingleResult {
-	return familyCollection.FindOne(context.TODO(), bson.D{
-		primitive.E{Key: "guardians.phone_num", Value: bson.D{
-			primitive.E{Key: "$eq", Value: phoneNum},
-		}},
-	})
 }
 
 // GetFamilyByID searches & returns a Family with Guardian matching the phone number
@@ -196,21 +126,19 @@ func GetFamilyByID(id string) *mongo.SingleResult {
 		"_id": oid})
 }
 
-// GetFamilyByGuardianID  searches & returns a Family with Guardian matching GuardianID
-func GetFamilyByGuardianID(id string) *mongo.SingleResult {
+func GetFamilyByMemberID(memberID string) *mongo.SingleResult {
 	// TODO: err handling for ID Parsing
-	oid, _ := primitive.ObjectIDFromHex(id)
 	return familyCollection.FindOne(context.TODO(), bson.D{
-		primitive.E{Key: "guardians._id", Value: bson.D{
-			primitive.E{Key: "$eq", Value: oid},
+		primitive.E{Key: "contact_member_info.id", Value: bson.D{
+			primitive.E{Key: "$eq", Value: memberID},
 		}},
 	})
 }
 
 // GetFamilyByWardID  searches & returns a Family with Guardian matching GuardianID
-func GetFamilyByWardID(id string) *mongo.SingleResult {
+func GetFamilyByWardID(wardID string) *mongo.SingleResult {
 	// TODO: err handling for ID Parsing
-	oid, _ := primitive.ObjectIDFromHex(id)
+	oid, _ := primitive.ObjectIDFromHex(wardID)
 	return familyCollection.FindOne(context.TODO(), bson.D{
 		primitive.E{Key: "wards._id", Value: bson.D{
 			primitive.E{Key: "$eq", Value: oid},
@@ -219,9 +147,9 @@ func GetFamilyByWardID(id string) *mongo.SingleResult {
 }
 
 // GetFamilyByVehicleID  searches & returns a Family with Vehicle matching VehicleID
-func GetFamilyByVehicleID(id string) *mongo.SingleResult {
+func GetFamilyByVehicleID(vehicleID string) *mongo.SingleResult {
 	// TODO: err handling for ID Parsing
-	oid, _ := primitive.ObjectIDFromHex(id)
+	oid, _ := primitive.ObjectIDFromHex(vehicleID)
 	return familyCollection.FindOne(context.TODO(), bson.D{
 		primitive.E{Key: "vehicles._id", Value: bson.D{
 			primitive.E{Key: "$eq", Value: oid},
@@ -229,36 +157,21 @@ func GetFamilyByVehicleID(id string) *mongo.SingleResult {
 	})
 }
 
-// CountFamiliesByInstID as name implies
-func CountFamiliesByInstID(instID string) (int64, error) {
-	// oid, _ := primitive.ObjectIDFromHex(instID)
-	// log.Printf("GetManyAdminsByInstID: Decoded InstID - %v\n", oid.String())
-	return familyCollection.CountDocuments(context.TODO(), bson.D{primitive.E{
-		Key: "institution_id", Value: instID,
-	}})
-}
-
-// UpdateFamilyInfoByID - update only "RegCodeSent", "InstID" and "ContactID" of the family
-func UpdateFamilyInfoByID(f FamilyEditForm, idToUpdate string) (*mongo.UpdateResult, error) {
-	oid, _ := primitive.ObjectIDFromHex(idToUpdate)
-	return familyCollection.UpdateOne(context.TODO(), bson.M{"_id": oid}, bson.D{
-		primitive.E{Key: "$set", Value: bson.D{
-			primitive.E{Key: "reg_code_sent", Value: f.RegCodeSent},
-			primitive.E{Key: "institution_id", Value: f.InstID},
-			primitive.E{Key: "contact_id", Value: f.ContactID},
-		}},
-		primitive.E{Key: "$currentDate", Value: bson.D{
-			primitive.E{Key: "updated_at", Value: true},
-		}},
-	})
-}
-
-// ReplaceFamily - Made a Family with updated "Gaurdians", "Wards" and "Vehicles", and Replace the original
-func ReplaceFamily(f Family, gs []Guardian, ws []Ward, vs []Vehicle) (*mongo.UpdateResult, error) {
-
-	familyToReplace := getFamilyToReplace(f, gs, ws, vs)
+// ReplaceFamily - Made a Family with updated "ContactMemberInfo", "Wards" and "Vehicles", and Replace the original
+func ReplaceFamily(f Family, cMemberInfo MemberTagInfo, ws []Ward, vs []Vehicle) (*mongo.UpdateResult, error) {
+	familyToReplace := getFamilyToReplace(f, cMemberInfo, ws, vs)
 	return familyCollection.ReplaceOne(context.TODO(), bson.M{
 		"_id": f.ID}, familyToReplace)
+}
+
+func SetFamilyContactMemberID(id string, cMemberID string) (*mongo.UpdateResult, error) {
+	oid, _ := primitive.ObjectIDFromHex(id)
+	return familyCollection.UpdateOne(context.TODO(), bson.M{"_id": oid}, bson.D{
+		primitive.E{Key: "$set", Value: bson.D{
+			primitive.E{Key: "contact_member_info.id", Value: cMemberID},
+		}},
+	})
+
 }
 
 // DeleteFamilyByID deletes a Family Object from DB
@@ -270,67 +183,14 @@ func DeleteFamilyByID(idToDelete string) (*mongo.DeleteResult, error) {
 		"_id": oid})
 }
 
-func getFamilyToReplace(f Family, gs []Guardian, ws []Ward, vs []Vehicle) Family {
-	var allRegCodeSent bool
-	if len(gs) > len(f.Guardians) {
-		// set "regCodeSent" to false if new Guardians were added
-		allRegCodeSent = false
-	} else {
-		// set "regCodeSent" to false if any of Guardian Status is "0 - assigned"
-		allRegCodeSent = isAllRegCodeSent(gs)
-	}
-
+func getFamilyToReplace(f Family, cMemberInfo MemberTagInfo, ws []Ward, vs []Vehicle) Family {
 	return Family{
-		ID:             f.ID,
-		AllRegCodeSent: allRegCodeSent,
-		ContactID:      f.ContactID,
-		InstID:         f.InstID,
-		Guardians:      gs,
-		Wards:          ws,
-		Vehicles:       vs,
-		CreatedAt:      f.CreatedAt,
-		UpdatedAt:      time.Now(),
+		ID:                f.ID,
+		InstID:            f.InstID,
+		AllRegCodeSent:    f.AllRegCodeSent,
+		ContactMemberInfo: cMemberInfo,
+		Wards:             ws,
+		Vehicles:          vs,
+		ModifiedAt:        time.Now(),
 	}
 }
-
-func isAllRegCodeSent(gs []Guardian) bool {
-	// set "regCodeSent" to false if any of Guardian Status is "0 - assigned"
-	for _, v := range gs {
-		if v.Status == GAssigned {
-			return false
-		}
-	}
-	return true
-}
-
-// func getGuardianIDByGuardianName(name string) primitive.ObjectID {
-
-// 	projectStage := bson.D{
-// 		primitive.E{"$project", bson.D{
-// 			primitive.E{"name", bson.D{
-// 				primitive.E{"$concat", []string{
-// 					"$first_name", " ", "$last_name",
-// 				}},
-// 			}},
-// 		}},
-// 	}
-
-// 	matchStage := bson.D{
-// 		primitive.E{"$match", bson.D{
-// 			primitive.E{"name", name},
-// 		}},
-// 	}
-
-// 	cursor, err := familyCollection.Aggregate(context.TODO(), mongo.Pipeline{projectStage, matchStage})
-
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	var families []Family
-// 	if err = cursor.All(context.TODO(), &families); err != nil {
-// 		panic(err)
-// 	}
-// 	log.Println(families)
-
-// 	return primitive.NewObjectID()
-// }

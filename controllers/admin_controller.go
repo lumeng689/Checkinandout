@@ -92,6 +92,7 @@ func (s *CCServer) AdminLogin(c *gin.Context) {
 	c.BindJSON(&aLoginForm)
 	log.Printf("Login Info - %v\n", aLoginForm)
 
+	// Get Admin
 	adminToLogin := svc.Admin{}
 	err := svc.GetAdminByFrasUsername(aLoginForm.FrasUsername).Decode(&adminToLogin)
 	if err != nil {
@@ -110,6 +111,16 @@ func (s *CCServer) AdminLogin(c *gin.Context) {
 		return
 	}
 
+	// Compare Password
+	if s.Config.RequireAdminPswd && (aLoginForm.Password != adminToLogin.Password) {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Wrong Password, Login Failed",
+			"success": false,
+		})
+		return
+	}
+
+	// Update Admin
 	admin := svc.Admin{}
 	err = svc.UpdateAdminLoginTime(adminToLogin.ID.Hex(), &admin)
 	if err != nil {
@@ -123,6 +134,7 @@ func (s *CCServer) AdminLogin(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Login Succeed",
+		"success": true,
 		"data":    admin,
 	})
 	return
@@ -152,7 +164,19 @@ func (s *CCServer) RegisterAdmin(c *gin.Context) {
 		return
 	}
 
-	//TODO - Check if admin with same FRAS username exists (by validator)
+	// Check if admin with same FRAS username exists (by validator)
+	count, err := svc.CountAdminByFrasUsername(adminForm.FrasUsername)
+	if err != nil {
+		log.Printf("Error while counting Admin by FrasUsername - %v\n", err)
+	}
+	if count > 0 {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "Username has been used! Try another one",
+		})
+		return
+	}
+
+	// Create Admin in DB
 	_, err = svc.CreateAdmin(adminForm)
 	if err != nil {
 		log.Printf("Error while inserting new Admin into DB - %v\n", err)
@@ -169,29 +193,9 @@ func (s *CCServer) RegisterAdmin(c *gin.Context) {
 
 // UpdateAdminByID as name suggests
 func (s *CCServer) UpdateAdminByID(c *gin.Context) {
-	var adminForm svc.AdminRegForm
+	var adminForm svc.AdminEditForm
 	c.BindJSON(&adminForm)
 
-	// Check if institution exists
-	inst := svc.Institution{}
-	err := svc.GetInstByID(adminForm.InstID).Decode(&inst)
-
-	if err != nil {
-		// When no institution found, return failed
-		if err == mongo.ErrNoDocuments {
-			c.JSON(http.StatusForbidden, gin.H{
-				"message": "Admin does not exist, admin update failed",
-			})
-			return
-		}
-		log.Printf("Error while finding admin - %v\n", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Something went wrong",
-		})
-		return
-	}
-
-	//TODO - Check if admin with same FRAS username exists (by validator)
 	idToUpdate := c.Param("id")
 	res, err := svc.UpdateAdminByID(adminForm, idToUpdate)
 	if err != nil {

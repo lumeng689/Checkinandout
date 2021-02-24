@@ -1,6 +1,7 @@
+// route of this page is surveys/check-in-survey.html
 const numSubQuestion = 8;
 const numQuestion = 6;
-const mobileBaseAddr = "192.168.86.101:8000/?#/mobile/home"
+const mobileBaseAddr = "/mobile/home/"
 const apiBaseAddr = "/api/";
 
 function submitSurvey() {
@@ -11,7 +12,7 @@ function submitSurvey() {
   var gID = getQueryVariable("guardianID");
   sendSurveyToDb(instID, gID, QAList)
   // window.location.href='gatekeeper://gohome';
-  window.location.href=mobileBaseAddr;
+  window.location.replace(mobileBaseAddr);
 }
 
 function createInputArray() {

@@ -38,7 +38,7 @@ func (s *CCServer) AddWard(c *gin.Context) {
 
 	// Append New Ward to Family and Update in DB
 	wards := append(familyToAppend.Wards, newWard)
-	_, err = svc.ReplaceFamily(familyToAppend, familyToAppend.Guardians, wards, familyToAppend.Vehicles)
+	_, err = svc.ReplaceFamily(familyToAppend, familyToAppend.ContactMemberInfo, wards, familyToAppend.Vehicles)
 	if err != nil {
 		log.Printf("Error while adding Ward in DB - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -94,7 +94,7 @@ func (s *CCServer) UpdateWardByID(c *gin.Context) {
 	}
 
 	// Save updated family to DB
-	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.Guardians, wards, familyToUpdate.Vehicles)
+	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.ContactMemberInfo, wards, familyToUpdate.Vehicles)
 	if err != nil {
 		log.Printf("Error while updating Ward in DB - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -107,15 +107,16 @@ func (s *CCServer) UpdateWardByID(c *gin.Context) {
 	})
 
 	// Update Display Names in CCRecords
-	wInfo := svc.WardInfo{
-		Name:  wForm.FirstName + " " + wForm.LastName,
-		Group: wForm.Group,
-	}
-	_, err = svc.UpdateManyCCRecordsWardInfoByWardID(idToUpdate, wInfo)
-	if err != nil {
-		log.Printf("Error when Updating Many CCRecords by Ward ID - %v\n", err)
-	}
-	return
+	// TODO
+	// wInfo := svc.WardInfo{
+	// 	Name:  wForm.FirstName + " " + wForm.LastName,
+	// 	Group: wForm.Group,
+	// }
+	// _, err = svc.UpdateManyCCRecordsWardInfoByWardID(idToUpdate, wInfo)
+	// if err != nil {
+	// 	log.Printf("Error when Updating Many CCRecords by Ward ID - %v\n", err)
+	// }
+	// return
 }
 
 // DeleteWardByID - as is
@@ -149,7 +150,7 @@ func (s *CCServer) DeleteWardByID(c *gin.Context) {
 		}
 	}
 	// Save updated family to DB
-	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.Guardians, wards, familyToUpdate.Vehicles)
+	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.ContactMemberInfo, wards, familyToUpdate.Vehicles)
 
 	if err != nil {
 		log.Printf("Error while deleting Ward in DB - %v\n", err)
@@ -164,14 +165,15 @@ func (s *CCServer) DeleteWardByID(c *gin.Context) {
 	})
 
 	// Set CC-Records to Expire
-	ccrParams := svc.MarkCCRecordAsExpiredParams{
-		WardID: idToDelete,
-	}
-	_, err = svc.MarkCCRecordAsExpired(ccrParams)
-	// If any error, log it in server, since it is not fatal
-	if err != nil {
-		log.Printf("Error while marking CCRecord as Expired - %v\n", err)
-	}
+	// TODO
+	// ccrParams := svc.MarkCCRecordAsExpiredParams{
+	// 	WardID: idToDelete,
+	// }
+	// _, err = svc.MarkCCRecordAsExpired(ccrParams)
+	// // If any error, log it in server, since it is not fatal
+	// if err != nil {
+	// 	log.Printf("Error while marking CCRecord as Expired - %v\n", err)
+	// }
 
 	return
 }

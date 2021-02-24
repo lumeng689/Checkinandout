@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -13,22 +12,29 @@ import (
 // AdminRegForm - Input Form for Admin
 type AdminRegForm struct {
 	FrasUsername string `json:"fras_username"`
+	Password     string `bson:"password" json:"password"`
 	InstID       string `json:"institution_id"`
+}
+
+// AdminEditForm - Input Form for Admin
+type AdminEditForm struct {
+	FrasUsername string `json:"fras_username"`
 }
 
 // AdminLoginForm - Incoming Request for Login
 type AdminLoginForm struct {
 	FrasUsername string `json:"fras_username"`
+	Password     string `bson:"password" json:"password"`
 }
 
 // Admin - DB Model for Admin
 type Admin struct {
 	ID           primitive.ObjectID `bson:"_id" json:"_id"`
 	FrasUsername string             `bson:"fras_username" json:"fras_username"`
+	Password     string             `bson:"password" json:"password"`
 	InstID       string             `bson:"institution_id" json:"institution_id"`
 	LastLoginAt  time.Time          `bson:"last_login_at" json:"last_login_at"`
-	CreatedAt    time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt    time.Time          `bson:"updated_at" json:"updated_at"`
+	ModifiedAt   time.Time          `bson:"modified_at" json:"modified_at"`
 }
 
 // GetAdminParams - QueryString Params for GetAdmin
@@ -67,8 +73,16 @@ func GetManyAdminsByInstID(instID string) (*mongo.Cursor, error) {
 }
 
 // GetAdminByFrasUsername - as name suggests; Invoked when logging in from FRAS
+func CountAdminByFrasUsername(frasUsername string) (int64, error) {
+	// log.Printf("Counting Admin with username - %v\n", frasUsername)
+	return adminCollection.CountDocuments(context.TODO(), bson.M{
+		"fras_username": frasUsername,
+	})
+}
+
+// GetAdminByFrasUsername - as name suggests; Invoked when logging in from FRAS
 func GetAdminByFrasUsername(frasUsername string) *mongo.SingleResult {
-	log.Printf("Getting Admin with username - %v\n", frasUsername)
+	// log.Printf("Getting Admin with username - %v\n", frasUsername)
 	return adminCollection.FindOne(context.TODO(), bson.M{
 		"fras_username": frasUsername,
 	})
@@ -79,22 +93,22 @@ func CreateAdmin(a AdminRegForm) (*mongo.InsertOneResult, error) {
 	newAdmin := Admin{
 		ID:           primitive.NewObjectID(),
 		FrasUsername: a.FrasUsername,
+		Password:     a.Password,
 		InstID:       a.InstID,
-		CreatedAt:    time.Now(),
+		ModifiedAt:   time.Now(),
 	}
 	return adminCollection.InsertOne(context.TODO(), newAdmin)
 }
 
 // UpdateAdminByID as name suggests
-func UpdateAdminByID(i AdminRegForm, idToUpdate string) (*mongo.UpdateResult, error) {
+func UpdateAdminByID(i AdminEditForm, idToUpdate string) (*mongo.UpdateResult, error) {
 	oid, _ := primitive.ObjectIDFromHex(idToUpdate)
 	return adminCollection.UpdateOne(context.TODO(), bson.M{"_id": oid}, bson.D{
 		primitive.E{Key: "$set", Value: bson.D{
 			primitive.E{Key: "fras_username", Value: i.FrasUsername},
-			primitive.E{Key: "institution_id", Value: i.InstID},
 		}},
 		primitive.E{Key: "$currentDate", Value: bson.D{
-			primitive.E{Key: "updated_at", Value: true},
+			primitive.E{Key: "modified_at", Value: true},
 		}},
 	})
 }

@@ -9,25 +9,60 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// TODO - throw error if input is outside const values
+type InstType string
+type WorkflowType string
+type MemberType string
+
+// InstType Enum Defs
+const (
+	InstTypeSchool    InstType = "school"
+	InstTypeHospital           = "hospital"
+	InstTypeCorporate          = "corporate"
+)
+
+// RecordType Enum Defs
+const (
+	WorkflowTypeCC      WorkflowType = "cc"
+	WorkflowTypeCheckIn              = "checkin"
+)
+
+// MemberType Enum Defs
+const (
+	MemberTypeGuardian MemberType = "guardian"
+	MemberTypeStandard            = "stardard"
+	MemberTypeTag                 = "tag"
+)
+
 // InstitutionForm - Input Form for Institution
 type InstitutionForm struct {
-	Type    int    `json:"type"`
-	Name    string `json:"name" validate:"required,min=2,max=100"`
-	Address string `json:"address" validate:"required,min=5,max=100"`
-	State   string `json:"state" validate:"required,state"`
-	ZipCode string `bson:"zip_code" json:"zip_code" validate:"required,zip_code"`
+	Type                 string `json:"type"`
+	WorkflowType         string `json:"workflow_type"`
+	MemberType           string `json:"member_type"`
+	Identifier           string `json:"identifier"`
+	CustomTagStringRegex string `json:"custom_tag_string_regex"`
+	Name                 string `json:"name" validate:"required,min=2,max=100"`
+	Address              string `json:"address" validate:"required,min=5,max=100"`
+	State                string `json:"state" validate:"required,state"`
+	ZipCode              string `json:"zip_code" validate:"required,zip_code"`
+	RequireSurvey        bool   `json:"require_survey"`
 }
 
 // Institution - DB Model for Institution
 type Institution struct {
-	ID        primitive.ObjectID `bson:"_id" json:"_id"`
-	Type      int                `json:"type"`
-	Name      string             `json:"name"`
-	Address   string             `json:"address"`
-	State     string             `json:"state"`
-	ZipCode   string             `bson:"zip_code" json:"zip_code"`
-	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
-	UpdatedAt time.Time          `bson:"updated_at" json:"updated_at"`
+	ID                   primitive.ObjectID `bson:"_id" json:"_id"`
+	Type                 InstType           `json:"type"`
+	WorkflowType         WorkflowType       `bson:"workflow_type" json:"workflow_type"`
+	MemberType           MemberType         `bson:"member_type" json:"member_type"`
+	Identifier           string             `bson:"identifier" json:"identifier"`
+	CustomTagStringRegex string             `bson:"custom_tag_string_regex" json:"custom_tag_string_regex"`
+	Name                 string             `json:"name"`
+	Address              string             `json:"address"`
+	State                string             `json:"state"`
+	ZipCode              string             `bson:"zip_code" json:"zip_code"`
+	RequireSurvey        bool               `bson:"require_survey" json:"require_survey"`
+	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
+	ModifiedAt           time.Time          `bson:"modified_at" json:"modified_at"`
 }
 
 var instCollection *mongo.Collection
@@ -50,37 +85,53 @@ func GetInstByID(id string) *mongo.SingleResult {
 	return instCollection.FindOne(context.TODO(), bson.M{"_id": oid})
 }
 
+// GetInstByIdentifier as name suggests
+func GetInstByIdentifier(identifier string) *mongo.SingleResult {
+	// TODO: err handling for ID Parsing
+	return instCollection.FindOne(context.TODO(), bson.D{
+		primitive.E{Key: "identifier", Value: identifier},
+	})
+}
+
 // CreateInst as name suggests
 func CreateInst(i InstitutionForm) (*mongo.InsertOneResult, error) {
-
+	// requireSurvey, _ := strconv.ParseBool(i.RequireSurvey)
 	newInst := Institution{
-		ID:        primitive.NewObjectID(),
-		Type:      i.Type,
-		Name:      i.Name,
-		Address:   i.Address,
-		State:     i.State,
-		ZipCode:   i.ZipCode,
-		CreatedAt: time.Now(),
+		ID:                   primitive.NewObjectID(),
+		Type:                 InstType(i.Type),
+		WorkflowType:         WorkflowType(i.WorkflowType),
+		MemberType:           MemberType(i.MemberType),
+		Identifier:           i.Identifier,
+		CustomTagStringRegex: i.CustomTagStringRegex,
+		Name:                 i.Name,
+		Address:              i.Address,
+		State:                i.State,
+		ZipCode:              i.ZipCode,
+		RequireSurvey:        i.RequireSurvey,
+		CreatedAt:            time.Now(),
+		ModifiedAt:           time.Now(),
 	}
-
 	return instCollection.InsertOne(context.TODO(), newInst)
 }
 
 // UpdateInstByID as name suggests
 func UpdateInstByID(i InstitutionForm, idToUpdate string) (*mongo.UpdateResult, error) {
-
 	oid, _ := primitive.ObjectIDFromHex(idToUpdate)
-
 	return instCollection.UpdateOne(context.TODO(), bson.M{"_id": oid}, bson.D{
 		primitive.E{Key: "$set", Value: bson.D{
-			primitive.E{Key: "type", Value: i.Type},
+			primitive.E{Key: "type", Value: InstType(i.Type)},
+			primitive.E{Key: "workflow_type", Value: WorkflowType(i.WorkflowType)},
+			primitive.E{Key: "member_type", Value: MemberType(i.MemberType)},
+			primitive.E{Key: "identifier", Value: i.Identifier},
+			primitive.E{Key: "custom_tag_string_regex", Value: i.CustomTagStringRegex},
 			primitive.E{Key: "name", Value: i.Name},
 			primitive.E{Key: "address", Value: i.Address},
 			primitive.E{Key: "state", Value: i.State},
 			primitive.E{Key: "zip_code", Value: i.ZipCode},
+			primitive.E{Key: "require_survey", Value: i.RequireSurvey},
 		}},
 		primitive.E{Key: "$currentDate", Value: bson.D{
-			primitive.E{Key: "updated_at", Value: true},
+			primitive.E{Key: "modified_at", Value: true},
 		}},
 	})
 }
