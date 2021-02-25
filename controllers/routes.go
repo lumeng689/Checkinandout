@@ -76,4 +76,7 @@ func (s *CCServer) Routes(router *gin.Engine) {
 	// router.GET("/api/export/wards", s.ExportManyWards)
 	// router.GET("/api/export/families", s.ExportManyFamilies)
 	// router.GET("/api/export/surveys", s.ExportManySurveys)
+
+	// Import APIs
+	router.POST("/api/import/tags", s.ImportManyTags)
 }

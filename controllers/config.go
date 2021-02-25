@@ -70,7 +70,7 @@ func (s *CCServer) InitConfig(appName string) {
 	if err != nil {
 		log.Printf("init config failed with error - %v\n", err)
 	}
-	log.Printf("config initialized - %v\n", config)
+	// log.Printf("config initialized - %v\n", config)
 
 	s.Config = config
 }
@@ -89,5 +89,8 @@ func (s *CCServer) ReloadConfig() {
 		return
 	}
 
+	// log.Println("SMSConf.AuthToken: ", reloadedConfig.SMSAuthToken)
 	s.Config.SMSConf.AuthToken = reloadedConfig.SMSAuthToken
+	log.Printf("config reloaded - %v\n", s.Config)
+
 }
