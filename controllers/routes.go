@@ -49,6 +49,7 @@ func (s *CCServer) Routes(router *gin.Engine) {
 	router.POST("/api/family", s.CreateFamily)
 	router.DELETE("/api/family/:id", s.DeleteFamilyByID)
 	router.GET("/api/family", s.GetFamily)
+	router.GET("/api/family-with-members", s.GetFamilyWithMembers)
 	router.GET("/api/family-with-members/:id", s.GetFamilyWithMembersByID)
 
 	// Ward APIs
@@ -73,10 +74,14 @@ func (s *CCServer) Routes(router *gin.Engine) {
 
 	// Export APIs
 	router.GET("/api/export/cc-records", s.ExportManyCCRecords)
-	// router.GET("/api/export/wards", s.ExportManyWards)
-	// router.GET("/api/export/families", s.ExportManyFamilies)
-	// router.GET("/api/export/surveys", s.ExportManySurveys)
+	router.GET("/api/export/members", s.ExportManyMembers)
+	router.GET("/api/export/families", s.ExportManyFamilies)
+	router.GET("/api/export/wards", s.ExportManyWards)
+	router.GET("/api/export/surveys", s.ExportManySurveys)
 
 	// Import APIs
 	router.POST("/api/import/tags", s.ImportManyTags)
+
+	// Config APIs
+	router.POST("/api/config/reload", s.RunReloadConfig)
 }

@@ -2,9 +2,11 @@ package controllers
 
 import (
 	"log"
+	"net/http"
 	"path/filepath"
 
 	svc "cloudminds.com/harix/cc-server/services"
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/mongo"
 )
@@ -73,6 +75,14 @@ func (s *CCServer) InitConfig(appName string) {
 	// log.Printf("config initialized - %v\n", config)
 
 	s.Config = config
+}
+
+// RunReloadConfig - as is
+func (s *CCServer) RunReloadConfig(c *gin.Context) {
+	s.ReloadConfig()
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Config Reload is Successful",
+	})
 }
 
 // ReloadConfig - reload hot-reloadable configs from DB

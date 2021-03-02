@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -177,6 +178,7 @@ func (s *CCServer) RegisterAdmin(c *gin.Context) {
 	}
 
 	// Create Admin in DB
+	adminForm.FrasUsername = strings.ToLower(strings.TrimSpace(adminForm.FrasUsername))
 	_, err = svc.CreateAdmin(adminForm)
 	if err != nil {
 		log.Printf("Error while inserting new Admin into DB - %v\n", err)

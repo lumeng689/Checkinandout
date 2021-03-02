@@ -10,9 +10,9 @@ import (
 )
 
 type SurveyRegForm struct {
-	InstID     string           `bson:"institution_id" json:"institution_id"`
-	GuardianID string           `bson:"guardian_id" json:"guardian_id"`
-	QAList     []QuestionAnswer `json:"qa_list"`
+	InstID   string           `bson:"institution_id" json:"institution_id"`
+	MemberID string           `bson:"member_id" json:"member_id"`
+	QAList   []QuestionAnswer `json:"qa_list"`
 }
 
 type QuestionAnswer struct {
@@ -24,11 +24,11 @@ type QuestionAnswer struct {
 }
 
 type Survey struct {
-	ID         primitive.ObjectID `bson:"_id" json:"_id"`
-	InstID     string             `bson:"institution_id" json:"institution_id"`
-	GuardianID string             `bson:"guardian_id" json:"guardian_id"`
-	QAList     []QuestionAnswer   `json:"qa_list"`
-	CreatedAt  time.Time          `bson:"created_at" json:"created_at"`
+	ID        primitive.ObjectID `bson:"_id" json:"_id"`
+	InstID    string             `bson:"institution_id" json:"institution_id"`
+	MemberID  string             `bson:"member_id" json:"member_id"`
+	QAList    []QuestionAnswer   `json:"qa_list"`
+	CreatedAt time.Time          `bson:"created_at" json:"created_at"`
 }
 
 type GetSurveyParams struct {
@@ -50,11 +50,11 @@ func GetManySurveys(params *GetSurveyParams) (*mongo.Cursor, error) {
 func CreateSurvey(s SurveyRegForm, qas []QuestionAnswer) (*mongo.InsertOneResult, error) {
 
 	newSurvey := Survey{
-		ID:         primitive.NewObjectID(),
-		InstID:     s.InstID,
-		GuardianID: s.GuardianID,
-		QAList:     qas,
-		CreatedAt:  time.Now(),
+		ID:        primitive.NewObjectID(),
+		InstID:    s.InstID,
+		MemberID:  s.MemberID,
+		QAList:    qas,
+		CreatedAt: time.Now(),
 	}
 	return surveyCollection.InsertOne(context.TODO(), newSurvey)
 }

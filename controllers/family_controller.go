@@ -56,12 +56,12 @@ func (s *CCServer) GetManyFamilies(c *gin.Context) {
 	return
 }
 
-// GetFamilyWithMembersByID - as is
+// GetFamilyWithMembers - as is
 func (s *CCServer) GetFamilyWithMembersByID(c *gin.Context) {
 	id := c.Param("id")
-	family := svc.Family{}
 
 	// Get Family By ID
+	family := svc.Family{}
 	err := svc.GetFamilyByID(id).Decode(&family)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
@@ -71,6 +71,63 @@ func (s *CCServer) GetFamilyWithMembersByID(c *gin.Context) {
 			return
 		}
 		log.Printf("Error while Getting Family by ID - %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Something went wrong",
+		})
+		return
+	}
+
+	// Get Members By FamilyID
+	params := svc.GetMemberParams{
+		FamilyID: family.ID.Hex(),
+	}
+	cursor, err := svc.GetManyMembers(&params)
+
+	members := []svc.Member{}
+	if err = cursor.All(context.TODO(), &members); err != nil {
+		panic(err)
+	}
+
+	familyWithMembers := FamilyWithMembersResponse{
+		ID:                family.ID.Hex(),
+		InstID:            family.InstID,
+		AllRegCodeSent:    family.AllRegCodeSent,
+		ContactMemberInfo: family.ContactMemberInfo,
+		Members:           members,
+		Wards:             family.Wards,
+		Vehicles:          family.Vehicles,
+		ModifiedAt:        family.ModifiedAt,
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": "Family with Members",
+		"data":    familyWithMembers,
+	})
+	return
+}
+
+// GetFamilyWithMembers - as is
+func (s *CCServer) GetFamilyWithMembers(c *gin.Context) {
+	// id := c.Param("id")
+
+	wardID, ok := c.GetQuery("wardID")
+	if !ok {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"message": "GetFamilyWithMembers Query given is not Supported",
+		})
+		return
+	}
+	// Get Family By WardID
+	family := svc.Family{}
+	err := svc.GetFamilyByWardID(wardID).Decode(&family)
+	if err != nil {
+		if err == mongo.ErrNoDocuments {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "Family does not exist",
+			})
+			return
+		}
+		log.Printf("Error while Getting Family by wardID - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Something went wrong",
 		})
@@ -269,7 +326,7 @@ func (s *CCServer) getFamilyByWardID(c *gin.Context, wardID string) {
 	family := svc.Family{}
 	err := svc.GetFamilyByWardID(wardID).Decode(&family)
 	if err != nil {
-		log.Printf("Error while Getting Family by ID - %v\n", err)
+		log.Printf("Error while Getting Family by wardID - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"message": "Something went wrong",
 		})

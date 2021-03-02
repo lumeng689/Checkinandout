@@ -1,19 +1,50 @@
 // route of this page is surveys/check-in-survey.html
 const numSubQuestion = 8;
 const numQuestion = 6;
-const mobileBaseAddr = "/mobile/home/"
+const mobileBaseAddr = "/mobile/home"
 const apiBaseAddr = "/api/";
+var surveyFailModal;
+window.addEventListener('load', function () {
+  // var surveyFailModalEl = document.getElementById('surveyFailModal')
+  // surveyFailModalEl.addEventListener('hide.bs.modal', onModalHide)
+  $('#surveyFailModal').on('hide.bs.modal', onModalHide)
+  surveyFailModal = new bootstrap.Modal(document.getElementById('surveyFailModal'))
+})
+// surveyFailModal.addEventListe
+
+function onCloseModal() {
+  // const surveyFailModal = new bootstrap.Modal(document.getElementById('surveyFailModal'))
+  surveyFailModal.hide()
+}
+
+function onModalHide() {
+  console.log('modalHide')
+  window.location.replace(mobileBaseAddr)
+
+}
 
 function submitSurvey() {
   var inputArray = createInputArray();
   var QAList = getSurveyQAList(inputArray);
   console.log(JSON.stringify(QAList));
   var instID = getQueryVariable("instID");
-  var gID = getQueryVariable("guardianID");
+  var gID = getQueryVariable("memberID");
   sendSurveyToDb(instID, gID, QAList)
-  // window.location.href='gatekeeper://gohome';
-  window.location.replace(mobileBaseAddr);
-}
+
+  if (QAList.every((qa) => {
+    return !qa.answer_bool
+  })) {
+    console.log('Survey Passed!');
+    window.location.replace(mobileBaseAddr + '?proceed=true');
+    return;
+  }
+
+  console.log('Survey Failed!')
+    // alert("You May Not Proceed. Please Contact Your Health Consultant. Thanks For Your Survey!")
+  // const surveyFailModal = new bootstrap.Modal(document.getElementById('surveyFailModal'))
+  surveyFailModal.show()
+    // window.location.replace(mobileBaseAddr);
+  }
 
 function createInputArray() {
   var inputArray = [];
@@ -51,7 +82,7 @@ function createInputArray() {
   inputArray[numSubQuestion + numQuestion] = document.getElementById(
     "text-0-0"
   ).value;
-  // console.log(`createInput, array value - ${inputArray}`);
+  console.log(`createInput, array value - ${inputArray}`);
   return inputArray;
 }
 
@@ -85,11 +116,11 @@ function getQueryVariable(variable) {
   // console.log("Query variable %s not found", variable);
 }
 
-function sendSurveyToDb(institutionID, guardianID, qaList) {
+function sendSurveyToDb(institutionID, memberID, qaList) {
   const http = new XMLHttpRequest();
   var requestBody = {
     institution_id: institutionID,
-    guardian_id: guardianID,
+    member_id: memberID,
     qa_list: qaList,
   };
   const query = apiBaseAddr + "survey/";

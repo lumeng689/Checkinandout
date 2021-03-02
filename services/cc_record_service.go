@@ -106,14 +106,14 @@ type CCRecord struct {
 }
 
 type GetCCRecordParams struct {
-	InstID          string
-	WardID          string
-	MemberTagID     string
-	StartDate       time.Time
-	EndDate         time.Time
-	TemperatureThrd float32
-	Status          int
-	ExcludeStatus   int
+	InstID            string
+	WardID            string
+	MemberTagID       string
+	StartDate         time.Time
+	EndDate           time.Time
+	TemperatureThrd   float32
+	Status            int
+	ExcludeStatusList []int
 }
 
 type MarkCCRecordAsExpiredParams struct {
@@ -190,9 +190,9 @@ func GetCCRecord(params *GetCCRecordParams) *mongo.SingleResult {
 	}
 	if params.Status != -1 {
 		filters = append(filters, primitive.E{Key: "status", Value: params.Status})
-	} else if params.ExcludeStatus != -1 {
+	} else if len(params.ExcludeStatusList) > 0 {
 		filters = append(filters, primitive.E{Key: "status", Value: bson.D{
-			primitive.E{Key: "$ne", Value: params.ExcludeStatus},
+			primitive.E{Key: "$nin", Value: params.ExcludeStatusList},
 		}})
 	}
 
@@ -258,8 +258,8 @@ func CreateCCRecord(instID string, initData CreateCCRecordData) (*mongo.InsertOn
 	return ccRecordCollection.InsertOne(context.TODO(), newCCRecord)
 }
 
-func UpdateCCRecordWithEvent(ccr CCRecord, eventData NewEventData, mType MemberType, stage string) (*mongo.UpdateResult, error) {
-	updatedCCR := getUpdatedCCRecordWithEvent(ccr, eventData, mType, stage)
+func UpdateCCRecordWithEvent(ccr CCRecord, eventData NewEventData, mType MemberType, stage string, scanFailed bool) (*mongo.UpdateResult, error) {
+	updatedCCR := getUpdatedCCRecordWithEvent(ccr, eventData, mType, stage, scanFailed)
 	return ccRecordCollection.ReplaceOne(context.TODO(), bson.M{
 		"_id": updatedCCR.ID}, updatedCCR)
 }
@@ -381,13 +381,15 @@ func DeleteCCRecordByID(idToDelete string) (*mongo.DeleteResult, error) {
 	return ccRecordCollection.DeleteOne(context.TODO(), bson.M{"_id": oid})
 }
 
-func getUpdatedCCRecordWithEvent(ccr CCRecord, eventData NewEventData, mType MemberType, stage string) CCRecord {
+func getUpdatedCCRecordWithEvent(ccr CCRecord, eventData NewEventData, mType MemberType, stage string, scanFailed bool) CCRecord {
 
 	newCCR := CCRecord{
 		ID:     ccr.ID,
 		InstID: ccr.InstID,
 	}
-	if stage == "checkin" {
+	if scanFailed {
+		newCCR.Status = CCrFailed
+	} else if stage == "checkin" {
 		// if mType == MemberTypeGuardian {
 		// 	newCCR.Status = CCrCheckInComplete
 		// } else {

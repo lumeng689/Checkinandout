@@ -106,20 +106,20 @@ func (s *CCServer) GetOrCreateManyCCRecords(c *gin.Context) {
 		return
 	}
 
-	var excludeStatus svc.CCRecordStatus
+	var excludeStatusList []int
 	if inst.WorkflowType == svc.WorkflowTypeCC {
-		excludeStatus = svc.CCrCheckOutComplete
+		excludeStatusList = []int{int(svc.CCrCheckOutComplete), int(svc.CCrFailed)}
 	} else if inst.WorkflowType == svc.WorkflowTypeCheckIn {
-		excludeStatus = svc.CCrCheckInComplete
+		excludeStatusList = []int{int(svc.CCrCheckInComplete), int(svc.CCrFailed)}
 	}
 
 	// Case 2 - Member
 	if CCRecordsForm.MemberID != nil {
 		memberID := *CCRecordsForm.MemberID
 		getParams := svc.GetCCRecordParams{
-			MemberTagID:   memberID,
-			Status:        -1, // set Status to "-1" to disable status filter
-			ExcludeStatus: int(excludeStatus),
+			MemberTagID:       memberID,
+			Status:            -1, // set Status to "-1" to disable status filter
+			ExcludeStatusList: excludeStatusList,
 		}
 		ccRecord := svc.CCRecord{}
 		err := svc.GetCCRecord(&getParams).Decode(&ccRecord)
@@ -149,9 +149,9 @@ func (s *CCServer) GetOrCreateManyCCRecords(c *gin.Context) {
 		for _, wardID := range *CCRecordsForm.WardIDs {
 
 			getParams := svc.GetCCRecordParams{
-				WardID:        wardID,
-				Status:        -1, // set Status to "-1" to disable status filter
-				ExcludeStatus: int(excludeStatus),
+				WardID:            wardID,
+				Status:            -1, // set Status to "-1" to disable status filter
+				ExcludeStatusList: excludeStatusList,
 			}
 			ccRecord := svc.CCRecord{}
 			err := svc.GetCCRecord(&getParams).Decode(&ccRecord)
@@ -210,26 +210,27 @@ func (s *CCServer) HandleCCScanEvent(c *gin.Context) {
 		}
 	}
 
+	// Check if Failed
+	var scanFailed = false
+	if sPostingForm.Temperature > s.Config.TempThrd {
+		scanFailed = true
+	}
+
 	var ok bool
+	var tagStage string
 	if scanResultContent.Type == ScanResultGWType {
-		ok = s.handleCCScanGuardianEvent(c, sPostingForm, scanResultContent, statusParam)
+		ok = s.handleCCScanGuardianEvent(c, sPostingForm, scanResultContent, statusParam, scanFailed)
 	} else if scanResultContent.Type == ScanResultMemberType {
-		ok = s.handleCCScanMemberEvent(c, sPostingForm, scanResultContent, statusParam)
+		ok = s.handleCCScanMemberEvent(c, sPostingForm, scanResultContent, statusParam, scanFailed)
 	} else if scanResultContent.Type == ScanResultTagType {
 		log.Println("scantype - tag")
-		ok = s.handleCCScanTagEvent(c, sPostingForm, scanResultContent)
+		ok, tagStage = s.handleCCScanTagEvent(c, sPostingForm, scanResultContent, scanFailed)
 	}
 	if !ok {
 		return
 	}
 
 	// Response to Temp Scanner
-	if scanResultContent.Type == ScanResultTagType {
-		c.JSON(http.StatusOK, gin.H{
-			"success": true,
-		})
-		return
-	}
 	// surveyURL, err := http.NewRequest("GET", s.Config.ServerAddr+surveyBaseAddr+"check-in-survey.html", nil)
 	// if err != nil {
 	// 	log.Printf("HandleCCEvent - error occurs when making survey url %v\n", err)
@@ -238,14 +239,22 @@ func (s *CCServer) HandleCCScanEvent(c *gin.Context) {
 	// q.Add("memberID", scanResultContent.MemberTagID)
 	// surveyURL.URL.RawQuery = q.Encode()
 	// log.Printf("SurveyURL: %v\n", surveyURL.URL.String())
-	if stage == "checkin" {
+	var responseStage string
+	if scanResultContent.Type == ScanResultTagType {
+		responseStage = tagStage
+	} else {
+		responseStage = stage
+	}
+
+	if responseStage == "checkin" {
 		if sPostingForm.Temperature < tempThrd {
 			// TODO - generate a url with guardianID
 			log.Println("Checkin Scan Received, returning Success & Survey URL")
 			c.JSON(http.StatusOK, gin.H{
 				"success": true,
 				"data":    s.Config.ServerAddr + surveyBaseAddr + "succeed-page.html",
-				"stage":   "checkin",
+				// "data":  s.Config.ServerAddr + surveyBaseAddr + "check-in-survey.html",
+				"stage": responseStage,
 			})
 		}
 		if sPostingForm.Temperature >= tempThrd {
@@ -253,17 +262,17 @@ func (s *CCServer) HandleCCScanEvent(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
 				"data":    s.Config.ServerAddr + surveyBaseAddr + "failed-page.html",
-				"stage":   "checkin",
+				"stage":   responseStage,
 			})
 			return
 		}
 	}
-	if stage == "checkout" {
+	if responseStage == "checkout" {
 		if !s.Config.RequireCheckOutTemp || sPostingForm.Temperature < tempThrd {
 			log.Println("CheckOut Scan Received, returning Success")
 			c.JSON(http.StatusOK, gin.H{
 				"success": true,
-				"stage":   "checkout",
+				"stage":   responseStage,
 			})
 			return
 		}
@@ -271,7 +280,7 @@ func (s *CCServer) HandleCCScanEvent(c *gin.Context) {
 			log.Println("CheckOut Scan Received, returning Failed")
 			c.JSON(http.StatusOK, gin.H{
 				"success": false,
-				"stage":   "checkout",
+				"stage":   responseStage,
 			})
 			return
 		}
@@ -340,7 +349,7 @@ func (s *CCServer) DeleteCCRecordByID(c *gin.Context) {
 }
 
 func (s *CCServer) handleCCScanGuardianEvent(c *gin.Context,
-	sPostingForm svc.ScanPostingForm, scanResultContent *parsedScanResult, statusParam int) bool {
+	sPostingForm svc.ScanPostingForm, scanResultContent *parsedScanResult, statusParam int, scanFailed bool) bool {
 	// "scanResultContent" contains "MemberID|WardID|checkin/out|single/all|timestamp"
 
 	// Get Member
@@ -380,7 +389,7 @@ func (s *CCServer) handleCCScanGuardianEvent(c *gin.Context,
 			WardID: scanResultContent.WardID,
 			Status: statusParam,
 		}
-		return getAndUpdateCCRecordWithEvent(c, params, newEventData, svc.MemberTypeGuardian, scanResultContent.Stage)
+		return getAndUpdateCCRecordWithEvent(c, params, newEventData, svc.MemberTypeGuardian, scanResultContent.Stage, scanFailed)
 
 	} else {
 		//Family Scan Event
@@ -400,7 +409,7 @@ func (s *CCServer) handleCCScanGuardianEvent(c *gin.Context,
 				WardID: ward.ID.Hex(),
 				Status: statusParam,
 			}
-			if ok := getAndUpdateCCRecordWithEvent(c, params, newEventData, svc.MemberTypeGuardian, scanResultContent.Stage); !ok {
+			if ok := getAndUpdateCCRecordWithEvent(c, params, newEventData, svc.MemberTypeGuardian, scanResultContent.Stage, scanFailed); !ok {
 				return false
 			}
 		}
@@ -410,7 +419,7 @@ func (s *CCServer) handleCCScanGuardianEvent(c *gin.Context,
 }
 
 func (s *CCServer) handleCCScanMemberEvent(c *gin.Context,
-	sPostingForm svc.ScanPostingForm, scanResultContent *parsedScanResult, statusParam int) bool {
+	sPostingForm svc.ScanPostingForm, scanResultContent *parsedScanResult, statusParam int, scanFailed bool) bool {
 	// "scanResultContent" contains "MemberID|checkin/out|timestamp"
 
 	// Make EventData
@@ -431,11 +440,11 @@ func (s *CCServer) handleCCScanMemberEvent(c *gin.Context,
 	}
 
 	log.Printf("handleCCScanMemberEvent - getCCRecordParams: %v\n", params)
-	return getAndUpdateCCRecordWithEvent(c, params, newEventData, svc.MemberTypeStandard, scanResultContent.Stage)
+	return getAndUpdateCCRecordWithEvent(c, params, newEventData, svc.MemberTypeStandard, scanResultContent.Stage, scanFailed)
 }
 
 func (s *CCServer) handleCCScanTagEvent(c *gin.Context,
-	sPostingForm svc.ScanPostingForm, scanResultContent *parsedScanResult) bool {
+	sPostingForm svc.ScanPostingForm, scanResultContent *parsedScanResult, scanFailed bool) (bool, string) {
 	// "scanResultContent" contains ONLY a "TagString" param
 	//// Get Institution
 	inst := svc.Institution{}
@@ -447,14 +456,14 @@ func (s *CCServer) handleCCScanTagEvent(c *gin.Context,
 			c.JSON(http.StatusForbidden, gin.H{
 				"message": "No Institution maching the Identifier! Tag Scan Failed.",
 			})
-			return false
+			return false, ""
 
 		} else {
 			log.Printf("Error while getting Institution by Identifier - %v\n", err)
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Something went wrong",
 			})
-			return false
+			return false, ""
 		}
 	}
 
@@ -485,26 +494,26 @@ func (s *CCServer) handleCCScanTagEvent(c *gin.Context,
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Something went wrong",
 			})
-			return false
+			return false, ""
 		}
 
 	}
 
 	//// Determine Status to Exclude
-	var excludeStatus svc.CCRecordStatus
+	var excludeStatusList []int
 	if inst.WorkflowType == svc.WorkflowTypeCC {
-		excludeStatus = svc.CCrCheckOutComplete
+		excludeStatusList = []int{int(svc.CCrCheckOutComplete), int(svc.CCrFailed)}
 	} else if inst.WorkflowType == svc.WorkflowTypeCheckIn {
-		excludeStatus = svc.CCrCheckInComplete
+		excludeStatusList = []int{int(svc.CCrCheckInComplete), int(svc.CCrFailed)}
 	}
 
 	//// Get OR Create CCRecord & Determine Stage
 	tagID := scanResultContent.MemberTagID
 	ccParams := svc.GetCCRecordParams{
-		InstID:        inst.ID.Hex(),
-		MemberTagID:   tagID,
-		Status:        -1,
-		ExcludeStatus: int(excludeStatus),
+		InstID:            inst.ID.Hex(),
+		MemberTagID:       tagID,
+		Status:            -1,
+		ExcludeStatusList: excludeStatusList,
 	}
 	log.Printf("getCCRecordParams - %v\n", ccParams)
 
@@ -516,7 +525,7 @@ func (s *CCServer) handleCCScanTagEvent(c *gin.Context,
 		if err == mongo.ErrNoDocuments {
 			// When no CCRecord Found, Create a New One and return
 			if ok := createCCRecordTByTag(c, tagToProcess); !ok {
-				return false
+				return false, ""
 			}
 			stage = "checkin"
 			statusParam = int(svc.CCrInit)
@@ -525,7 +534,7 @@ func (s *CCServer) handleCCScanTagEvent(c *gin.Context,
 			c.JSON(http.StatusInternalServerError, gin.H{
 				"message": "Something went wrong",
 			})
-			return false
+			return false, ""
 
 		}
 	} else {
@@ -557,12 +566,12 @@ func (s *CCServer) handleCCScanTagEvent(c *gin.Context,
 		Status:      statusParam,
 	}
 	log.Printf("getAndUpdateCCRecordParams - %v\n", ccParams)
-	return getAndUpdateCCRecordWithEvent(c, ccParams, newEventData, svc.MemberTypeTag, stage)
+	return getAndUpdateCCRecordWithEvent(c, ccParams, newEventData, svc.MemberTypeTag, stage, scanFailed), stage
 
 }
 
 func getAndUpdateCCRecordWithEvent(c *gin.Context,
-	params svc.GetCCRecordParams, newEventData svc.NewEventData, mType svc.MemberType, stage string) bool {
+	params svc.GetCCRecordParams, newEventData svc.NewEventData, mType svc.MemberType, stage string, scanFailed bool) bool {
 
 	ccRecord := svc.CCRecord{}
 	err := svc.GetCCRecord(&params).Decode(&ccRecord)
@@ -574,7 +583,7 @@ func getAndUpdateCCRecordWithEvent(c *gin.Context,
 		return false
 	}
 
-	_, err = svc.UpdateCCRecordWithEvent(ccRecord, newEventData, mType, stage)
+	_, err = svc.UpdateCCRecordWithEvent(ccRecord, newEventData, mType, stage, scanFailed)
 	if err != nil {
 		log.Printf("Error when updating CCRecord with Event - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -719,12 +728,19 @@ func extractCCRecordParams(c *gin.Context, params *svc.GetCCRecordParams) error 
 	} else {
 		params.Status = -1
 	}
-	param, ok = c.GetQuery("excludeStatus")
+	statusList, ok := c.GetQuery("excludeStatus")
 	if ok {
-		param, _ := strconv.ParseInt(param, 10, 0)
-		params.ExcludeStatus = int(param)
+		statusList := strings.Split(statusList, ",")
+		statusListCvt := []int{}
+		for _, s := range statusList {
+			sCvt, _ := strconv.ParseInt(s, 10, 0)
+			statusListCvt = append(statusListCvt, int(sCvt))
+		}
+
+		// param, _ := strconv.ParseInt(param, 10, 0)
+		params.ExcludeStatusList = statusListCvt
 	} else {
-		params.ExcludeStatus = -1
+		params.ExcludeStatusList = []int{}
 	}
 	return nil
 }
