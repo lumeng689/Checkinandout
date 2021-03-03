@@ -180,6 +180,7 @@ func (s *CCServer) GetOrCreateManyCCRecords(c *gin.Context) {
 	}
 }
 
+// HandleCCScanEvent - Accepts Gatekeeper Scan Postings, and Process it in one of three modes ["guardian", "standard" or "tag"]
 func (s *CCServer) HandleCCScanEvent(c *gin.Context) {
 
 	var tempThrd = s.Config.TempThrd
@@ -289,6 +290,7 @@ func (s *CCServer) HandleCCScanEvent(c *gin.Context) {
 	return
 }
 
+// HandleCheckoutScheduleEvent - process "Schedule Checkout" request from MobileApp
 func (s *CCServer) HandleCheckoutScheduleEvent(c *gin.Context) {
 	var sPostingForm svc.SchedulePostingForm
 	c.BindJSON(&sPostingForm)
@@ -390,32 +392,29 @@ func (s *CCServer) handleCCScanGuardianEvent(c *gin.Context,
 			Status: statusParam,
 		}
 		return getAndUpdateCCRecordWithEvent(c, params, newEventData, svc.MemberTypeGuardian, scanResultContent.Stage, scanFailed)
-
-	} else {
-		//Family Scan Event
-		// Get Family
-		familyToUpdate := svc.Family{}
-		err := svc.GetFamilyByID(memberToUpdate.FamilyInfo.ID).Decode(&familyToUpdate)
-		if err != nil {
-			log.Printf("Error while Getting Family By ID - %v\n", err)
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Something went wrong",
-			})
+	}
+	//Family Scan Event
+	// Get Family
+	familyToUpdate := svc.Family{}
+	err = svc.GetFamilyByID(memberToUpdate.FamilyInfo.ID).Decode(&familyToUpdate)
+	if err != nil {
+		log.Printf("Error while Getting Family By ID - %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Something went wrong",
+		})
+		return false
+	}
+	// Update CCRecords
+	for _, ward := range familyToUpdate.Wards {
+		params := svc.GetCCRecordParams{
+			WardID: ward.ID.Hex(),
+			Status: statusParam,
+		}
+		if ok := getAndUpdateCCRecordWithEvent(c, params, newEventData, svc.MemberTypeGuardian, scanResultContent.Stage, scanFailed); !ok {
 			return false
 		}
-		// Update CCRecords
-		for _, ward := range familyToUpdate.Wards {
-			params := svc.GetCCRecordParams{
-				WardID: ward.ID.Hex(),
-				Status: statusParam,
-			}
-			if ok := getAndUpdateCCRecordWithEvent(c, params, newEventData, svc.MemberTypeGuardian, scanResultContent.Stage, scanFailed); !ok {
-				return false
-			}
-		}
-		return true
 	}
-
+	return true
 }
 
 func (s *CCServer) handleCCScanMemberEvent(c *gin.Context,
@@ -458,13 +457,13 @@ func (s *CCServer) handleCCScanTagEvent(c *gin.Context,
 			})
 			return false, ""
 
-		} else {
-			log.Printf("Error while getting Institution by Identifier - %v\n", err)
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Something went wrong",
-			})
-			return false, ""
 		}
+		log.Printf("Error while getting Institution by Identifier - %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Something went wrong",
+		})
+		return false, ""
+
 	}
 
 	//// Get Tag
@@ -745,8 +744,10 @@ func extractCCRecordParams(c *gin.Context, params *svc.GetCCRecordParams) error 
 	return nil
 }
 
+// ScanResultType - as is
 type ScanResultType int
 
+// ScanResultType Enum Defs
 const (
 	ScanResultGWType     ScanResultType = 1
 	ScanResultMemberType                = 2

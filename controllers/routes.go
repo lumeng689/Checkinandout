@@ -83,5 +83,9 @@ func (s *CCServer) Routes(router *gin.Engine) {
 	router.POST("/api/import/tags", s.ImportManyTags)
 
 	// Config APIs
+	router.GET("/api/configs", s.GetManyConfigs)
+	router.POST("/api/config", s.CreateConfig)
+	router.PUT("/api/config/:id", s.UpdateConfigByID)
 	router.POST("/api/config/reload", s.RunReloadConfig)
+
 }

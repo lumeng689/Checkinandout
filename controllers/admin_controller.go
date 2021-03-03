@@ -18,7 +18,6 @@ func (s *CCServer) GetManyAdmins(c *gin.Context) {
 	if err != nil {
 		log.Printf("Error while getting all admins - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  http.StatusInternalServerError,
 			"message": "Something went wrong",
 		})
 		return
@@ -95,6 +94,7 @@ func (s *CCServer) AdminLogin(c *gin.Context) {
 
 	// Get Admin
 	adminToLogin := svc.Admin{}
+	aLoginForm.FrasUsername = strings.ToLower(strings.TrimSpace(aLoginForm.FrasUsername))
 	err := svc.GetAdminByFrasUsername(aLoginForm.FrasUsername).Decode(&adminToLogin)
 	if err != nil {
 		// When no Doc found, create a new Admin in DB

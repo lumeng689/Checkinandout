@@ -17,7 +17,7 @@ func main() {
 	ccServer.InitConfig(appName)
 	// Database
 	ccServer.Connect()
-	ccServer.ReloadConfig()
+	ccServer.ReloadConfigFromDB()
 	// log.Printf("AuthToken is - %v\n", ccServer.Config.SMSConf.AuthToken)
 
 	//Validator

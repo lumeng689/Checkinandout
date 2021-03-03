@@ -13,11 +13,13 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// MemberLoginRespose - as is
 type MemberLoginRespose struct {
 	Member svc.Member  `json:"member"`
 	Family *svc.Family `json:"family"`
 }
 
+// GetManyMembers - as is
 func (s *CCServer) GetManyMembers(c *gin.Context) {
 
 	var queryParams svc.GetMemberParams
@@ -49,6 +51,7 @@ func (s *CCServer) GetManyMembers(c *gin.Context) {
 	return
 }
 
+// CreateMember - as is
 func (s *CCServer) CreateMember(c *gin.Context) {
 	var mRegForm svc.MemberRegForm
 	c.BindJSON(&mRegForm)
@@ -93,6 +96,7 @@ func (s *CCServer) CreateMember(c *gin.Context) {
 
 }
 
+// ActivateMember - as is
 func (s *CCServer) ActivateMember(c *gin.Context) {
 	mActivateForm := svc.MemberActivateForm{}
 	c.BindJSON(&mActivateForm)
@@ -173,6 +177,7 @@ func (s *CCServer) ActivateMember(c *gin.Context) {
 	return
 }
 
+// LoginMember - as is
 func (s *CCServer) LoginMember(c *gin.Context) {
 	mLoginForm := svc.MemberLoginForm{}
 	c.BindJSON(&mLoginForm)
@@ -259,6 +264,7 @@ func (s *CCServer) LoginMember(c *gin.Context) {
 	return
 }
 
+// UpdateMemberByID - as is
 func (s *CCServer) UpdateMemberByID(c *gin.Context) {
 	// perform Update
 	idToUpdate := c.Param("id")
@@ -308,6 +314,7 @@ func (s *CCServer) UpdateMemberByID(c *gin.Context) {
 	return
 }
 
+// DeleteMemberByID - as is
 func (s *CCServer) DeleteMemberByID(c *gin.Context) {
 	// Get Member
 	idToDelete := c.Param("id")

@@ -43,6 +43,7 @@ func (s *CCServer) GetManyTags(c *gin.Context) {
 	return
 }
 
+// GetTag - as is
 func (s *CCServer) GetTag(c *gin.Context) {
 	var queryParams svc.GetTagParams
 	queryParams.TagString = c.DefaultQuery("tagString", "")

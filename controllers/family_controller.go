@@ -15,6 +15,7 @@ import (
 	svc "cloudminds.com/harix/cc-server/services"
 )
 
+// FamilyWithMembersResponse - as is
 type FamilyWithMembersResponse struct {
 	ID                string            `json:"_id"`
 	InstID            string            `json:"institution_id"`
@@ -56,7 +57,7 @@ func (s *CCServer) GetManyFamilies(c *gin.Context) {
 	return
 }
 
-// GetFamilyWithMembers - as is
+// GetFamilyWithMembersByID - as is
 func (s *CCServer) GetFamilyWithMembersByID(c *gin.Context) {
 	id := c.Param("id")
 

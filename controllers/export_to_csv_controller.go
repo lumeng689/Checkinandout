@@ -20,6 +20,8 @@ func (s *CCServer) ExportManyCCRecords(c *gin.Context) {
 	// TODO - handle error when parsing time
 	var queryParams svc.GetCCRecordParams
 	err := extractCCRecordParams(c, &queryParams)
+	offsetHourRaw := c.DefaultQuery("hourOffset", "-8")
+	offsetHours, _ := strconv.ParseInt(offsetHourRaw, 10, 0)
 
 	if err != nil {
 		log.Printf("Error while parsing CCEvents Query Parameters - %v\n", err)
@@ -66,12 +68,18 @@ func (s *CCServer) ExportManyCCRecords(c *gin.Context) {
 	for _, ccRecord := range ccRecords {
 		var recordName, recordGroup, recordPhoneNum string
 		var recordTime time.Time
-		if inst.MemberType == svc.MemberTypeStandard {
+		if inst.MemberType == svc.MemberTypeStandard || inst.MemberType == svc.MemberTypeTag {
+			if ccRecord.MT == nil {
+				continue
+			}
 			recordName = ccRecord.MT.Info.Name
 			recordGroup = ccRecord.MT.Info.Group
 			recordPhoneNum = ccRecord.MT.Info.PhoneNum
 			recordTime = ccRecord.MT.CheckInEvent.Time
 		} else if inst.MemberType == svc.MemberTypeGuardian {
+			if ccRecord.GW == nil {
+				continue
+			}
 			recordName = ccRecord.GW.WardInfo.Name
 			recordGroup = ccRecord.GW.WardInfo.Group
 			recordPhoneNum = ccRecord.GW.CheckInEvent.GuardianInfo.PhoneNum
@@ -83,7 +91,7 @@ func (s *CCServer) ExportManyCCRecords(c *gin.Context) {
 		// record = append(record, ccRecord.CheckInEvent.GuardianInfo.Name)
 		record = append(record, strconv.FormatFloat(float64(ccRecord.Temperature), 'f', 1, 64))
 		record = append(record, recordPhoneNum)
-		record = append(record, recordTime.In(time.Now().Location()).Format("01/02/2006 03:04:05PM"))
+		record = append(record, recordTime.In(time.FixedZone("BROWSER", int(offsetHours)*60*60)).Format("01/02/2006 03:04:05PM"))
 		// record = append(record, ccRecord.CheckOutScheduledAt.In(time.Now().Location()).Format("01/02/2006 03:04:05PM"))
 		// record = append(record, ccRecord.CheckOutEvent.Time.In(time.Now().Location()).Format("01/02/2006 03:04:05PM"))
 		if err := w.Write(record); err != nil {
@@ -248,6 +256,8 @@ func (s *CCServer) ExportManyWards(c *gin.Context) {
 func (s *CCServer) ExportManySurveys(c *gin.Context) {
 	var queryParams svc.GetSurveyParams
 	queryParams.InstID = c.DefaultQuery("instID", "000000000000000000000000")
+	offsetHourRaw := c.DefaultQuery("hourOffset", "-8")
+	offsetHours, _ := strconv.ParseInt(offsetHourRaw, 10, 0)
 
 	cursor, err := svc.GetManySurveys(&queryParams)
 
@@ -290,7 +300,10 @@ func (s *CCServer) ExportManySurveys(c *gin.Context) {
 			record = append(record, []string{"", "", ""}...)
 		} else {
 			memberName := member.FirstName + " " + member.LastName
-			record = append(record, []string{memberName, member.PhoneNum, survey.CreatedAt.In(time.Now().Location()).Format("Jan 2 2006 03:04:05PM")}...)
+			record = append(record, memberName)
+			record = append(record, member.PhoneNum)
+			record = append(record, survey.CreatedAt.In(time.FixedZone("BROWSER", int(offsetHours)*60*60)).Format("Jan 2 2006 03:04:05PM"))
+			// record = append(record, []string{memberName, member.PhoneNum, survey.CreatedAt.In(time.Now().Location()).Format("Jan 2 2006 03:04:05PM")}...)
 		}
 		// Export Survey Answers
 		for _, qa := range survey.QAList {

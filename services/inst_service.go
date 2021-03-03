@@ -30,7 +30,7 @@ const (
 // MemberType Enum Defs
 const (
 	MemberTypeGuardian MemberType = "guardian"
-	MemberTypeStandard            = "stardard"
+	MemberTypeStandard            = "standard"
 	MemberTypeTag                 = "tag"
 )
 

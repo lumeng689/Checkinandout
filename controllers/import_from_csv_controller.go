@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// ImportManyTags - batch import tags through CSV file
 func (s *CCServer) ImportManyTags(c *gin.Context) {
 
 	instID := c.DefaultQuery("instID", "000000000000000000000000")
