@@ -20,8 +20,8 @@ import (
 // var serverAddr = "http://192.168.86.101:8000"
 var surveyBaseAddr = "/surveys/"
 
-//GetCCRecords - as is
-func (s *CCServer) GetCCRecords(c *gin.Context) {
+//GetManyCCRecords - as is
+func (s *CCServer) GetManyCCRecords(c *gin.Context) {
 	// TODO - handle error when parsing time
 	var queryParams svc.GetCCRecordParams
 	err := extractCCRecordParams(c, &queryParams)
@@ -121,21 +121,9 @@ func (s *CCServer) GetOrCreateManyCCRecords(c *gin.Context) {
 			Status:            -1, // set Status to "-1" to disable status filter
 			ExcludeStatusList: excludeStatusList,
 		}
-		ccRecord := svc.CCRecord{}
-		err := svc.GetCCRecord(&getParams).Decode(&ccRecord)
-		if err != nil {
-			// When no CCRecord Found, Create a New One and return
-			if err == mongo.ErrNoDocuments {
-				if ok := createCCRecordMByMemberID(c, memberID, &ccRecord); !ok {
-					return
-				}
-			} else {
-				log.Printf("Error while finding CCRecords - %v\n", err)
-				c.JSON(http.StatusInternalServerError, gin.H{
-					"message": "Something went wrong",
-				})
-				return
-			}
+		ccRecord, ok := getOrCreateCCRecordMember(c, &getParams)
+		if !ok {
+			return
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"message": "CCEvent",
@@ -153,24 +141,12 @@ func (s *CCServer) GetOrCreateManyCCRecords(c *gin.Context) {
 				Status:            -1, // set Status to "-1" to disable status filter
 				ExcludeStatusList: excludeStatusList,
 			}
-			ccRecord := svc.CCRecord{}
-			err := svc.GetCCRecord(&getParams).Decode(&ccRecord)
-			if err != nil {
-				// When no CCRecord Found, Create a New One and return
-				if err == mongo.ErrNoDocuments {
-					if ok := createCCRecordGWByWardID(c, wardID, &ccRecord); !ok {
-						return
-					}
-				} else {
-					log.Printf("Error while finding CCRecords - %v\n", err)
-					c.JSON(http.StatusInternalServerError, gin.H{
-						"message": "Something went wrong",
-					})
-					return
-				}
+			ccRecord, ok := getOrCreateCCRecordGW(c, &getParams)
+			if !ok {
+				return
 			}
-			// Append the obtained CC Record to List
-			ccRecords = append(ccRecords, ccRecord)
+			// // Append the obtained CC Record to List
+			ccRecords = append(ccRecords, *ccRecord)
 		}
 		c.JSON(http.StatusOK, gin.H{
 			"message": "All CCEvents",
@@ -178,6 +154,9 @@ func (s *CCServer) GetOrCreateManyCCRecords(c *gin.Context) {
 		})
 		return
 	}
+	c.JSON(http.StatusBadRequest, gin.H{
+		"message": "Sync CCRecord Query given is not Supported",
+	})
 }
 
 // HandleCCScanEvent - Accepts Gatekeeper Scan Postings, and Process it in one of three modes ["guardian", "standard" or "tag"]
@@ -196,15 +175,15 @@ func (s *CCServer) HandleCCScanEvent(c *gin.Context) {
 	sPostingForm.Mask = mask
 	sPostingForm.DeviceID = c.PostForm("device_id")
 	log.Printf("CCRecordForm is - %v\n", sPostingForm)
-	scanResultContent := parseScanResult(sPostingForm.ScanResult)
+	sResultContent := parseScanResult(sPostingForm.ScanResult)
 
 	// Get Stage Param
-	stage := scanResultContent.Stage
+	stage := sResultContent.Stage
 	var statusParam int = -1
 	if stage == "checkin" {
 		statusParam = int(svc.CCrInit)
 	} else if stage == "checkout" {
-		if scanResultContent.Type == ScanResultGWType {
+		if sResultContent.Type == ScanResultGWType {
 			statusParam = int(svc.CCrScheduleComplete)
 		} else {
 			statusParam = int(svc.CCrCheckInComplete)
@@ -212,20 +191,20 @@ func (s *CCServer) HandleCCScanEvent(c *gin.Context) {
 	}
 
 	// Check if Failed
-	var scanFailed = false
+	var isScanFailed = false
 	if sPostingForm.Temperature > s.Config.TempThrd {
-		scanFailed = true
+		isScanFailed = true
 	}
 
 	var ok bool
 	var tagStage string
-	if scanResultContent.Type == ScanResultGWType {
-		ok = s.handleCCScanGuardianEvent(c, sPostingForm, scanResultContent, statusParam, scanFailed)
-	} else if scanResultContent.Type == ScanResultMemberType {
-		ok = s.handleCCScanMemberEvent(c, sPostingForm, scanResultContent, statusParam, scanFailed)
-	} else if scanResultContent.Type == ScanResultTagType {
+	if sResultContent.Type == ScanResultGWType {
+		ok = s.handleCCScanGuardianEvent(c, sPostingForm, sResultContent, statusParam, isScanFailed)
+	} else if sResultContent.Type == ScanResultMemberType {
+		ok = s.handleCCScanMemberEvent(c, sPostingForm, sResultContent, statusParam, isScanFailed)
+	} else if sResultContent.Type == ScanResultTagType {
 		log.Println("scantype - tag")
-		ok, tagStage = s.handleCCScanTagEvent(c, sPostingForm, scanResultContent, scanFailed)
+		ok, tagStage = s.handleCCScanTagEvent(c, sPostingForm, sResultContent, isScanFailed)
 	}
 	if !ok {
 		return
@@ -241,7 +220,7 @@ func (s *CCServer) HandleCCScanEvent(c *gin.Context) {
 	// surveyURL.URL.RawQuery = q.Encode()
 	// log.Printf("SurveyURL: %v\n", surveyURL.URL.String())
 	var responseStage string
-	if scanResultContent.Type == ScanResultTagType {
+	if sResultContent.Type == ScanResultTagType {
 		responseStage = tagStage
 	} else {
 		responseStage = stage
@@ -257,6 +236,7 @@ func (s *CCServer) HandleCCScanEvent(c *gin.Context) {
 				// "data":  s.Config.ServerAddr + surveyBaseAddr + "check-in-survey.html",
 				"stage": responseStage,
 			})
+			return
 		}
 		if sPostingForm.Temperature >= tempThrd {
 			log.Println("Checkin Scan Received, returning Failed")
@@ -286,8 +266,6 @@ func (s *CCServer) HandleCCScanEvent(c *gin.Context) {
 			return
 		}
 	}
-
-	return
 }
 
 // HandleCheckoutScheduleEvent - process "Schedule Checkout" request from MobileApp
@@ -351,12 +329,12 @@ func (s *CCServer) DeleteCCRecordByID(c *gin.Context) {
 }
 
 func (s *CCServer) handleCCScanGuardianEvent(c *gin.Context,
-	sPostingForm svc.ScanPostingForm, scanResultContent *parsedScanResult, statusParam int, scanFailed bool) bool {
+	sPostingForm svc.ScanPostingForm, sResultContent *parsedScanResult, statusParam int, scanFailed bool) bool {
 	// "scanResultContent" contains "MemberID|WardID|checkin/out|single/all|timestamp"
 
 	// Get Member
 	memberToUpdate := svc.Member{}
-	err := svc.GetMemberByID(scanResultContent.MemberTagID).Decode(&memberToUpdate)
+	err := svc.GetMemberByID(sResultContent.MemberTagID).Decode(&memberToUpdate)
 	if err != nil {
 		log.Printf("Error while Getting Member By ID - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -374,24 +352,26 @@ func (s *CCServer) handleCCScanGuardianEvent(c *gin.Context,
 		Group:    memberToUpdate.Group,
 	}
 	gEventToAdd := svc.GuardianEvent{
-		IsSingleEvent: scanResultContent.isSingleEvent,
+		IsSingleEvent: sResultContent.isSingleEvent,
 		GuardianInfo:  gInfo,
 		ScanType:      sPostingForm.ScanType,
 		Temperature:   sPostingForm.Temperature,
 		Mask:          sPostingForm.Mask,
-		Time:          scanResultContent.Time,
+		Time:          sResultContent.Time,
 	}
 	newEventData := svc.NewEventData{
 		GuardianEvent: &gEventToAdd,
+		Stage:         sResultContent.Stage,
+		IsScanFailed:  scanFailed,
 	}
 
-	if scanResultContent.isSingleEvent {
+	if sResultContent.isSingleEvent {
 		//Single Scan Event
-		params := svc.GetCCRecordParams{
-			WardID: scanResultContent.WardID,
+		ccParams := svc.GetCCRecordParams{
+			WardID: sResultContent.WardID,
 			Status: statusParam,
 		}
-		return getAndUpdateCCRecordWithEvent(c, params, newEventData, svc.MemberTypeGuardian, scanResultContent.Stage, scanFailed)
+		return getAndUpdateCCRecordWithEvent(c, ccParams, newEventData)
 	}
 	//Family Scan Event
 	// Get Family
@@ -406,11 +386,11 @@ func (s *CCServer) handleCCScanGuardianEvent(c *gin.Context,
 	}
 	// Update CCRecords
 	for _, ward := range familyToUpdate.Wards {
-		params := svc.GetCCRecordParams{
+		ccParams := svc.GetCCRecordParams{
 			WardID: ward.ID.Hex(),
 			Status: statusParam,
 		}
-		if ok := getAndUpdateCCRecordWithEvent(c, params, newEventData, svc.MemberTypeGuardian, scanResultContent.Stage, scanFailed); !ok {
+		if ok := getAndUpdateCCRecordWithEvent(c, ccParams, newEventData); !ok {
 			return false
 		}
 	}
@@ -418,7 +398,7 @@ func (s *CCServer) handleCCScanGuardianEvent(c *gin.Context,
 }
 
 func (s *CCServer) handleCCScanMemberEvent(c *gin.Context,
-	sPostingForm svc.ScanPostingForm, scanResultContent *parsedScanResult, statusParam int, scanFailed bool) bool {
+	sPostingForm svc.ScanPostingForm, sResultContent *parsedScanResult, statusParam int, isScanFailed bool) bool {
 	// "scanResultContent" contains "MemberID|checkin/out|timestamp"
 
 	// Make EventData
@@ -426,28 +406,30 @@ func (s *CCServer) handleCCScanMemberEvent(c *gin.Context,
 		ScanType:    sPostingForm.ScanType,
 		Temperature: sPostingForm.Temperature,
 		Mask:        sPostingForm.Mask,
-		Time:        scanResultContent.Time,
+		Time:        sResultContent.Time,
 	}
 	newEventData := svc.NewEventData{
 		MemberTagEvent: &mEventToAdd,
+		Stage:          sResultContent.Stage,
+		IsScanFailed:   isScanFailed,
 	}
 
 	// Get CCRecord
 	params := svc.GetCCRecordParams{
-		MemberTagID: scanResultContent.MemberTagID,
+		MemberTagID: sResultContent.MemberTagID,
 		Status:      statusParam,
 	}
 
 	log.Printf("handleCCScanMemberEvent - getCCRecordParams: %v\n", params)
-	return getAndUpdateCCRecordWithEvent(c, params, newEventData, svc.MemberTypeStandard, scanResultContent.Stage, scanFailed)
+	return getAndUpdateCCRecordWithEvent(c, params, newEventData)
 }
 
 func (s *CCServer) handleCCScanTagEvent(c *gin.Context,
-	sPostingForm svc.ScanPostingForm, scanResultContent *parsedScanResult, scanFailed bool) (bool, string) {
+	sPostingForm svc.ScanPostingForm, sResultContent *parsedScanResult, isScanFailed bool) (bool, string) {
 	// "scanResultContent" contains ONLY a "TagString" param
 	//// Get Institution
 	inst := svc.Institution{}
-	err := svc.GetInstByIdentifier(scanResultContent.InstIdentifier).Decode(&inst)
+	err := svc.GetInstByIdentifier(sResultContent.InstIdentifier).Decode(&inst)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			// If Institution does not exist, abort
@@ -467,35 +449,14 @@ func (s *CCServer) handleCCScanTagEvent(c *gin.Context,
 	}
 
 	//// Get Tag
-	tagToProcess := svc.Tag{}
 	tParams := svc.GetTagParams{
 		InstID:    inst.ID.Hex(),
-		TagString: scanResultContent.MemberTagID,
+		TagString: sResultContent.MemberTagID,
 	}
-	err = svc.GetTag(&tParams).Decode(&tagToProcess)
-	if err != nil {
-		if err == mongo.ErrNoDocuments {
-			// If Tag not exist, create one under institution
-			tRegForm := svc.TagRegForm{
-				InstID:    inst.ID.Hex(),
-				TagString: scanResultContent.MemberTagID,
-			}
-			_, err = svc.CreateTag(tRegForm)
-			err = svc.GetTag(&tParams).Decode(&tagToProcess)
 
-			log.Printf("Tag not found by TagString, New Tag Created!")
-			// c.JSON(http.StatusForbidden, gin.H{
-			// 	"message": "Tag not found by TagString, Tag Scan Failed!",
-			// })
-			// return false
-		} else {
-			log.Printf("Error while getting Tag by TagString - %v\n", err)
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "Something went wrong",
-			})
-			return false, ""
-		}
-
+	tagToProcess, ok := getOrCreateTag(c, &tParams)
+	if !ok {
+		return false, ""
 	}
 
 	//// Determine Status to Exclude
@@ -507,7 +468,7 @@ func (s *CCServer) handleCCScanTagEvent(c *gin.Context,
 	}
 
 	//// Get OR Create CCRecord & Determine Stage
-	tagID := scanResultContent.MemberTagID
+	tagID := sResultContent.MemberTagID
 	ccParams := svc.GetCCRecordParams{
 		InstID:            inst.ID.Hex(),
 		MemberTagID:       tagID,
@@ -523,7 +484,7 @@ func (s *CCServer) handleCCScanTagEvent(c *gin.Context,
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			// When no CCRecord Found, Create a New One and return
-			if ok := createCCRecordTByTag(c, tagToProcess); !ok {
+			if ok := createCCRecordTByTag(c, *tagToProcess); !ok {
 				return false, ""
 			}
 			stage = "checkin"
@@ -556,21 +517,23 @@ func (s *CCServer) handleCCScanTagEvent(c *gin.Context,
 	}
 	newEventData := svc.NewEventData{
 		MemberTagEvent: &mEventToAdd,
+		Stage:          stage,
+		IsScanFailed:   isScanFailed,
 	}
 
 	// Get CCRecord
 	ccParams = svc.GetCCRecordParams{
 		InstID:      inst.ID.Hex(),
-		MemberTagID: scanResultContent.MemberTagID,
+		MemberTagID: sResultContent.MemberTagID,
 		Status:      statusParam,
 	}
 	log.Printf("getAndUpdateCCRecordParams - %v\n", ccParams)
-	return getAndUpdateCCRecordWithEvent(c, ccParams, newEventData, svc.MemberTypeTag, stage, scanFailed), stage
+	return getAndUpdateCCRecordWithEvent(c, ccParams, newEventData), stage
 
 }
 
 func getAndUpdateCCRecordWithEvent(c *gin.Context,
-	params svc.GetCCRecordParams, newEventData svc.NewEventData, mType svc.MemberType, stage string, scanFailed bool) bool {
+	params svc.GetCCRecordParams, newEventData svc.NewEventData) bool {
 
 	ccRecord := svc.CCRecord{}
 	err := svc.GetCCRecord(&params).Decode(&ccRecord)
@@ -582,7 +545,7 @@ func getAndUpdateCCRecordWithEvent(c *gin.Context,
 		return false
 	}
 
-	_, err = svc.UpdateCCRecordWithEvent(ccRecord, newEventData, mType, stage, scanFailed)
+	_, err = svc.UpdateCCRecordWithEvent(ccRecord, newEventData)
 	if err != nil {
 		log.Printf("Error when updating CCRecord with Event - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -593,7 +556,48 @@ func getAndUpdateCCRecordWithEvent(c *gin.Context,
 	return true
 }
 
-func createCCRecordGWByWardID(c *gin.Context, wardID string, newCCRecord *svc.CCRecord) bool {
+func getOrCreateCCRecordGW(c *gin.Context, ccParams *svc.GetCCRecordParams) (*svc.CCRecord, bool) {
+	ccRecord := svc.CCRecord{}
+	err := svc.GetCCRecord(ccParams).Decode(&ccRecord)
+	if err == nil {
+		return &ccRecord, true
+	}
+	// When no CCRecord Found, Create a New One and return
+	if err == mongo.ErrNoDocuments {
+		if ok := createAndGetCCRecordGWByWardID(c, ccParams.WardID, &ccRecord); !ok {
+			return nil, false
+		}
+		return &ccRecord, true
+	}
+	log.Printf("Error while finding CCRecords - %v\n", err)
+	c.JSON(http.StatusInternalServerError, gin.H{
+		"message": "Something went wrong",
+	})
+	return nil, false
+}
+
+func getOrCreateCCRecordMember(c *gin.Context, ccParams *svc.GetCCRecordParams) (*svc.CCRecord, bool) {
+	ccRecord := svc.CCRecord{}
+	err := svc.GetCCRecord(ccParams).Decode(&ccRecord)
+	if err == nil {
+		return &ccRecord, true
+	}
+	// When no CCRecord Found, Create a New One and return
+	if err == mongo.ErrNoDocuments {
+		if ok := createAndGetCCRecordMByMemberID(c, ccParams.MemberTagID, &ccRecord); !ok {
+			return nil, false
+		}
+		return &ccRecord, true
+	}
+	log.Printf("Error while finding CCRecords - %v\n", err)
+	c.JSON(http.StatusInternalServerError, gin.H{
+		"message": "Something went wrong",
+	})
+	return nil, false
+
+}
+
+func createAndGetCCRecordGWByWardID(c *gin.Context, wardID string, newCCRecord *svc.CCRecord) bool {
 	// Get Family By WardID
 	familyToProcess := svc.Family{}
 	err := svc.GetFamilyByWardID(wardID).Decode(&familyToProcess)
@@ -637,7 +641,7 @@ func createCCRecordGWByWardID(c *gin.Context, wardID string, newCCRecord *svc.CC
 	return true
 }
 
-func createCCRecordMByMemberID(c *gin.Context, memberID string, newCCRecord *svc.CCRecord) bool {
+func createAndGetCCRecordMByMemberID(c *gin.Context, memberID string, newCCRecord *svc.CCRecord) bool {
 	// Get Member
 	memberToProcess := svc.Member{}
 	err := svc.GetMemberByID(memberID).Decode(&memberToProcess)

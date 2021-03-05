@@ -78,9 +78,6 @@ func (s *CCServer) GetTag(c *gin.Context) {
 	return
 }
 
-// GetOrCreateTag - as is
-func (s *CCServer) GetOrCreateTag() {}
-
 // CreateTag - as is
 func (s *CCServer) CreateTag(c *gin.Context) {
 	var tRegForm svc.TagRegForm
@@ -232,4 +229,39 @@ func (s *CCServer) DeleteTagByID(c *gin.Context) {
 	})
 
 	// TODO - set CC-Records to Expire
+}
+
+func getOrCreateTag(c *gin.Context, tParams *svc.GetTagParams) (*svc.Tag, bool) {
+
+	tag := svc.Tag{}
+	err := svc.GetTag(tParams).Decode(&tag)
+	if err == nil {
+		return &tag, true
+	}
+
+	if err == mongo.ErrNoDocuments {
+		// If Tag not exist, create one under institution
+		tRegForm := svc.TagRegForm{
+			InstID:    tParams.InstID,
+			TagString: tParams.TagString,
+		}
+		_, err = svc.CreateTag(tRegForm)
+		if err != nil {
+			log.Printf("Error while inserting new Tag into DB - %v\n", err)
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"message": "Something went wrong",
+			})
+			return nil, false
+		}
+		err = svc.GetTag(tParams).Decode(&tag)
+		// log.Printf("Tag not found by TagString, New Tag Created!")
+		return &tag, true
+	}
+
+	log.Printf("Error while getting Tag by TagString - %v\n", err)
+	c.JSON(http.StatusInternalServerError, gin.H{
+		"message": "Something went wrong",
+	})
+	return nil, false
+
 }

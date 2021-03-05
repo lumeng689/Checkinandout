@@ -134,6 +134,8 @@ type CreateCCRecordData struct {
 type NewEventData struct {
 	GuardianEvent  *GuardianEvent
 	MemberTagEvent *MemberTagEvent
+	Stage          string
+	IsScanFailed   bool
 }
 
 var ccRecordCollection *mongo.Collection
@@ -258,8 +260,8 @@ func CreateCCRecord(instID string, initData CreateCCRecordData) (*mongo.InsertOn
 	return ccRecordCollection.InsertOne(context.TODO(), newCCRecord)
 }
 
-func UpdateCCRecordWithEvent(ccr CCRecord, eventData NewEventData, mType MemberType, stage string, scanFailed bool) (*mongo.UpdateResult, error) {
-	updatedCCR := getUpdatedCCRecordWithEvent(ccr, eventData, mType, stage, scanFailed)
+func UpdateCCRecordWithEvent(ccr CCRecord, eventData NewEventData) (*mongo.UpdateResult, error) {
+	updatedCCR := getUpdatedCCRecordWithEvent(ccr, eventData)
 	return ccRecordCollection.ReplaceOne(context.TODO(), bson.M{
 		"_id": updatedCCR.ID}, updatedCCR)
 }
@@ -381,22 +383,17 @@ func DeleteCCRecordByID(idToDelete string) (*mongo.DeleteResult, error) {
 	return ccRecordCollection.DeleteOne(context.TODO(), bson.M{"_id": oid})
 }
 
-func getUpdatedCCRecordWithEvent(ccr CCRecord, eventData NewEventData, mType MemberType, stage string, scanFailed bool) CCRecord {
+func getUpdatedCCRecordWithEvent(ccr CCRecord, eventData NewEventData) CCRecord {
 
 	newCCR := CCRecord{
 		ID:     ccr.ID,
 		InstID: ccr.InstID,
 	}
-	if scanFailed {
+	if eventData.IsScanFailed {
 		newCCR.Status = CCrFailed
-	} else if stage == "checkin" {
-		// if mType == MemberTypeGuardian {
-		// 	newCCR.Status = CCrCheckInComplete
-		// } else {
-		// 	newCCR.Status = CCrScheduleComplete
-		// }
+	} else if eventData.Stage == "checkin" {
 		newCCR.Status = CCrCheckInComplete
-	} else if stage == "checkout" {
+	} else if eventData.Stage == "checkout" {
 		newCCR.CheckOutScheduledAt = ccr.CheckOutScheduledAt
 		newCCR.Status = CCrCheckOutComplete
 	}
@@ -407,12 +404,12 @@ func getUpdatedCCRecordWithEvent(ccr CCRecord, eventData NewEventData, mType Mem
 		// Case 1 - Add Guardian Event
 		gEvent := eventData.GuardianEvent
 		newTemp = gEvent.Temperature
-		if stage == "checkin" {
+		if eventData.Stage == "checkin" {
 			newCCR.GW = &GW{
 				WardInfo:     ccr.GW.WardInfo,
 				CheckInEvent: *gEvent,
 			}
-		} else if stage == "checkout" {
+		} else if eventData.Stage == "checkout" {
 			newCCR.GW = &GW{
 				WardInfo:      ccr.GW.WardInfo,
 				CheckInEvent:  ccr.GW.CheckInEvent,
@@ -423,12 +420,12 @@ func getUpdatedCCRecordWithEvent(ccr CCRecord, eventData NewEventData, mType Mem
 		// Case 2/3 - Add Member/Tag Event
 		mtEvent := eventData.MemberTagEvent
 		newTemp = mtEvent.Temperature
-		if stage == "checkin" {
+		if eventData.Stage == "checkin" {
 			newCCR.MT = &MT{
 				Info:         ccr.MT.Info,
 				CheckInEvent: *mtEvent,
 			}
-		} else if stage == "checkout" {
+		} else if eventData.Stage == "checkout" {
 			newCCR.MT = &MT{
 				Info:          ccr.MT.Info,
 				CheckInEvent:  ccr.MT.CheckInEvent,

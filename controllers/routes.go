@@ -23,7 +23,7 @@ func (s *CCServer) Routes(router *gin.Engine) {
 	router.POST("api/admin/login", s.AdminLogin)
 
 	// CC-Records APIs
-	router.GET("/api/cc-records", s.GetCCRecords)
+	router.GET("/api/cc-records", s.GetManyCCRecords)
 	router.DELETE("/api/cc-record/:id", s.DeleteCCRecordByID)
 	router.POST("/api/cc-record/sync", s.GetOrCreateManyCCRecords)
 	router.POST("/api/cc-record/scan", s.HandleCCScanEvent)

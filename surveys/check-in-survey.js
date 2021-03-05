@@ -29,21 +29,24 @@ function submitSurvey() {
   console.log(JSON.stringify(QAList));
   var instID = getQueryVariable("instID");
   var gID = getQueryVariable("memberID");
-  sendSurveyToDb(instID, gID, QAList)
+  sendSurveyToDb(instID, gID, QAList, function () {
+    if (QAList.every((qa) => {
+      return !qa.answer_bool
+    })) {
+      console.log('Survey Passed!');
+      window.location.replace(mobileBaseAddr + '?proceed=true');
+      return;
+    }
+    console.log('Survey Failed!')
+      // alert("You May Not Proceed. Please Contact Your Health Consultant. Thanks For Your Survey!")
+    // const surveyFailModal = new bootstrap.Modal(document.getElementById('surveyFailModal'))
+    surveyFailModal.show()
+      // window.location.replace(mobileBaseAddr);
+  })
 
-  if (QAList.every((qa) => {
-    return !qa.answer_bool
-  })) {
-    console.log('Survey Passed!');
-    window.location.replace(mobileBaseAddr + '?proceed=true');
-    return;
-  }
+  
 
-  console.log('Survey Failed!')
-    // alert("You May Not Proceed. Please Contact Your Health Consultant. Thanks For Your Survey!")
-  // const surveyFailModal = new bootstrap.Modal(document.getElementById('surveyFailModal'))
-  surveyFailModal.show()
-    // window.location.replace(mobileBaseAddr);
+  
   }
 
 function createInputArray() {
@@ -116,7 +119,7 @@ function getQueryVariable(variable) {
   // console.log("Query variable %s not found", variable);
 }
 
-function sendSurveyToDb(institutionID, memberID, qaList) {
+function sendSurveyToDb(institutionID, memberID, qaList, callback) {
   const http = new XMLHttpRequest();
   var requestBody = {
     institution_id: institutionID,
@@ -130,6 +133,9 @@ function sendSurveyToDb(institutionID, memberID, qaList) {
     if (this.readyState === 4 && this.status === 201) {
       // console.log(this.responseText)
       console.log(this.responseText);
+      if (callback) {
+        callback();
+      }
     } else if (this.readyState === 4) {
       alert(this.responseText);
     }
