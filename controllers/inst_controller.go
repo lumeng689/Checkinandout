@@ -92,7 +92,6 @@ func (s *CCServer) CreateInst(c *gin.Context) {
 	if err != nil {
 		log.Printf("Error while inserting new Institution into DB - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
-			"status":  http.StatusInternalServerError,
 			"message": "Something went wrong",
 		})
 		return

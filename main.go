@@ -14,7 +14,7 @@ var appName = "cc-server"
 func main() {
 
 	var ccServer controllers.CCServer = controllers.InitServer()
-	ccServer.InitConfig(appName)
+	ccServer.InitConfig(appName, false)
 	// Database
 	ccServer.Connect()
 	ccServer.ReloadConfigFromDB()

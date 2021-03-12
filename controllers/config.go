@@ -55,8 +55,12 @@ var defaultConfig = Config{
 }
 
 // InitConfig - loading global configurations from json file
-func (s *CCServer) InitConfig(appName string) {
-	viper.AddConfigPath(filepath.Join(".", "configs"))
+func (s *CCServer) InitConfig(appName string, isTest bool) {
+	if isTest {
+		viper.AddConfigPath(filepath.Join("..", "configs"))
+	} else {
+		viper.AddConfigPath(filepath.Join(".", "configs"))
+	}
 	viper.SetConfigName(appName)
 	viper.AutomaticEnv()
 

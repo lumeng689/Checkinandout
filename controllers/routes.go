@@ -26,8 +26,13 @@ func (s *CCServer) Routes(router *gin.Engine) {
 	router.GET("/api/cc-records", s.GetManyCCRecords)
 	router.DELETE("/api/cc-record/:id", s.DeleteCCRecordByID)
 	router.POST("/api/cc-record/sync", s.GetOrCreateManyCCRecords)
-	router.POST("/api/cc-record/scan", s.HandleCCScanEvent)
 	router.POST("/api/cc-record/schedule", s.HandleCheckoutScheduleEvent)
+
+	// Gatekeeper APIs
+	router.POST("/api/cc-record/scan", s.HandleCCScanEvent)
+
+	// MobileAlert APIS
+	router.GET("api/cc-record/get-name", s.GetScanNameByDeviceID)
 
 	// Tag APIs
 	router.GET("api/tags", s.GetManyTags)

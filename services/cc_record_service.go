@@ -7,6 +7,7 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type CCRecordStatus int
@@ -15,10 +16,10 @@ type CCScanType int
 // CCRecordStatus Enum Defs
 const (
 	CCrInit             CCRecordStatus = 0
-	CCrCheckInComplete                 = 1
-	CCrScheduleComplete                = 2
-	CCrCheckOutComplete                = 3
-	CCrFailed                          = 4
+	CCrCheckInComplete  CCRecordStatus = 1
+	CCrScheduleComplete CCRecordStatus = 2
+	CCrCheckOutComplete CCRecordStatus = 3
+	CCrFailed           CCRecordStatus = 4
 )
 
 // CCScanType Enum Defs
@@ -40,8 +41,8 @@ type MemberTagInfo struct {
 	Group    string `json:"group"`
 }
 
-// CCAppPostingForm - Can Create multiple CCRecords
-type CCAppPostingForm struct {
+// CCSyncPostingForm - Can Create multiple CCRecords
+type CCSyncPostingForm struct {
 	InstID   string    `json:"institution_id"`
 	MemberID *string   `json:"member_id"`
 	WardIDs  *[]string `json:"ward_ids"`
@@ -68,6 +69,7 @@ type GuardianEvent struct {
 	IsSingleEvent bool          `json:"is_single_event"`
 	GuardianInfo  MemberTagInfo `bson:"guardian_info" json:"guardian_info"`
 	ScanType      CCScanType    `bson:"scan_type" json:"scan_type"`
+	DeviceID      string        `bson:"device_id" json:"device_id"`
 	Temperature   float32       `json:"temperature"`
 	Mask          bool          `json:"mask"`
 	Time          time.Time     `json:"time"`
@@ -76,6 +78,7 @@ type GuardianEvent struct {
 // MemberTagEvent - Can Update multiple CCRecords of Wards under a Family
 type MemberTagEvent struct {
 	ScanType    CCScanType `bson:"scan_type" json:"scan_type"`
+	DeviceID    string     `bson:"device_id" json:"device_id"`
 	Temperature float32    `json:"temperature"`
 	Mask        bool       `json:"mask"`
 	Time        time.Time  `json:"time"`
@@ -106,9 +109,11 @@ type CCRecord struct {
 }
 
 type GetCCRecordParams struct {
+	GetLatest         bool
 	InstID            string
 	WardID            string
 	MemberTagID       string
+	DeviceID          string
 	StartDate         time.Time
 	EndDate           time.Time
 	TemperatureThrd   float32
@@ -147,21 +152,21 @@ func CCRecordCollection(c *mongo.Database) {
 
 func GetManyCCRecords(params *GetCCRecordParams, mType MemberType) (*mongo.Cursor, error) {
 	// Determine Field on which to filter time
-	timeFilterKey := getFilterKeyRoot(mType) + ".check_in_event.time"
+	timeKey := getFilterRootKey(mType) + ".check_in_event.time"
 
 	// TODO: not sending status: "4 - deleted"
 	var filters bson.D
 	filters = append(filters, primitive.E{Key: "institution_id", Value: params.InstID})
 	if !params.StartDate.IsZero() {
 		filters = append(filters, primitive.E{
-			Key: timeFilterKey, Value: bson.D{primitive.E{
+			Key: timeKey, Value: bson.D{primitive.E{
 				Key: "$gt", Value: params.StartDate,
 			}},
 		})
 	}
 	if !params.EndDate.IsZero() {
 		filters = append(filters, primitive.E{
-			Key: timeFilterKey, Value: bson.D{primitive.E{
+			Key: timeKey, Value: bson.D{primitive.E{
 				Key: "$lt", Value: params.EndDate,
 			}},
 		})
@@ -182,20 +187,51 @@ func GetCCRecord(params *GetCCRecordParams) *mongo.SingleResult {
 
 	var filters bson.D
 	if len(params.InstID) > 0 {
+		// log.Printf("GetCCRecord - InstID filter - %v\n", params.InstID)
 		filters = append(filters, primitive.E{Key: "institution_id", Value: params.InstID})
 	}
 	if len(params.MemberTagID) > 0 {
+		// log.Printf("GetCCRecord - MemberTagID filter - %v\n", params.MemberTagID)
 		filters = append(filters, primitive.E{Key: "mt.info.id", Value: params.MemberTagID})
 	}
 	if len(params.WardID) > 0 {
+		// log.Printf("GetCCRecord - WardID filter - %v\n", params.WardID)
 		filters = append(filters, primitive.E{Key: "gw.ward_info.id", Value: params.WardID})
 	}
+
 	if params.Status != -1 {
+		// log.Printf("GetCCRecord - Status filter - %v\n", params.Status)
 		filters = append(filters, primitive.E{Key: "status", Value: params.Status})
 	} else if len(params.ExcludeStatusList) > 0 {
+		// log.Printf("GetCCRecord - ExcludeStatusList filter - %v\n", params.ExcludeStatusList)
 		filters = append(filters, primitive.E{Key: "status", Value: bson.D{
 			primitive.E{Key: "$nin", Value: params.ExcludeStatusList},
 		}})
+	}
+	if params.GetLatest {
+		queryOptions := options.FindOneOptions{}
+		queryOptions.SetSort(bson.D{
+			primitive.E{Key: "$natural", Value: -1},
+		})
+		return ccRecordCollection.FindOne(context.TODO(), filters, &queryOptions)
+	}
+
+	return ccRecordCollection.FindOne(context.TODO(), filters)
+}
+
+func GetCCRecordByDeviceID(params *GetCCRecordParams, mType MemberType) *mongo.SingleResult {
+	deviceIDKey := getFilterRootKey(mType) + ".check_in_event.device_id"
+	var filters bson.D
+	if len(params.DeviceID) > 0 {
+		// log.Printf("GetCCRecord - WardID filter - %v\n", params.WardID)
+		filters = append(filters, primitive.E{Key: deviceIDKey, Value: params.DeviceID})
+	}
+	if params.GetLatest {
+		queryOptions := options.FindOneOptions{}
+		queryOptions.SetSort(bson.D{
+			primitive.E{Key: "$natural", Value: -1},
+		})
+		return ccRecordCollection.FindOne(context.TODO(), filters, &queryOptions)
 	}
 
 	return ccRecordCollection.FindOne(context.TODO(), filters)
@@ -444,7 +480,7 @@ func getUpdatedCCRecordWithEvent(ccr CCRecord, eventData NewEventData) CCRecord 
 
 }
 
-func getFilterKeyRoot(mType MemberType) string {
+func getFilterRootKey(mType MemberType) string {
 	if mType == MemberTypeGuardian {
 		return "gw"
 	}

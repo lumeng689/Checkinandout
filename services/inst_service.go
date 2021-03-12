@@ -17,21 +17,21 @@ type MemberType string
 // InstType Enum Defs
 const (
 	InstTypeSchool    InstType = "school"
-	InstTypeHospital           = "hospital"
-	InstTypeCorporate          = "corporate"
+	InstTypeHospital  InstType = "hospital"
+	InstTypeCorporate InstType = "corporate"
 )
 
 // RecordType Enum Defs
 const (
 	WorkflowTypeCC      WorkflowType = "cc"
-	WorkflowTypeCheckIn              = "checkin"
+	WorkflowTypeCheckIn WorkflowType = "checkin"
 )
 
 // MemberType Enum Defs
 const (
 	MemberTypeGuardian MemberType = "guardian"
-	MemberTypeStandard            = "standard"
-	MemberTypeTag                 = "tag"
+	MemberTypeStandard MemberType = "standard"
+	MemberTypeTag      MemberType = "tag"
 )
 
 // InstitutionForm - Input Form for Institution
@@ -90,6 +90,22 @@ func GetInstByIdentifier(identifier string) *mongo.SingleResult {
 	// TODO: err handling for ID Parsing
 	return instCollection.FindOne(context.TODO(), bson.D{
 		primitive.E{Key: "identifier", Value: identifier},
+	})
+}
+
+// GetInstByName as name suggests
+func GetInstByName(name string) *mongo.SingleResult {
+	// TODO: err handling for ID Parsing
+	return instCollection.FindOne(context.TODO(), bson.D{
+		primitive.E{Key: "name", Value: name},
+	})
+}
+
+// CountInstByName - as is
+func CountInstByName(name string) (int64, error) {
+	// TODO: err handling for ID Parsing
+	return instCollection.CountDocuments(context.TODO(), bson.D{
+		primitive.E{Key: "name", Value: name},
 	})
 }
 

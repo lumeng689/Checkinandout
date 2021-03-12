@@ -16,3 +16,8 @@
 2. Update the Token using the following shell command:
 `> db.configs.update({name: "default"}, {$set: {sms_auth_token: "65a64755b83eb1e8e6ece4a7e7b6bce7"}})` 
 If Succeed, the shell returns info: `WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })`
+
+### Testing the Code
+0. Testing is recommended after changing/refractoring the code.
+1. To run tests, run following command in cmd: `go clean -testcache; go test ./tests`
+2. (Optional) to show debug info when testing, append `-v` option to `go test` (`go test ./tests -v`) 
