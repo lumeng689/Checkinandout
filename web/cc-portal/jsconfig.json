@@ -1,0 +1,5 @@
+{
+    "include": [
+      "./src/**/*"
+, "tsconfig.json", "utils/qrcode.js"    ]
+  }
