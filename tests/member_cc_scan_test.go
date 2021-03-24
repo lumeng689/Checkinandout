@@ -2,10 +2,6 @@ package tests
 
 import (
 	"context"
-	"encoding/json"
-	"net/http"
-	"net/http/httptest"
-	"net/url"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,19 +14,30 @@ import (
 	"go.mongodb.org/mongo-driver/mongo"
 )
 
+// TODO - test RegCode
+var instFormMemberTest = svc.InstitutionForm{
+	Type:          string(svc.InstTypeHospital),
+	MemberType:    string(svc.MemberTypeStandard),
+	WorkflowType:  string(svc.WorkflowTypeCC),
+	Name:          "MEMBER_CC_TEST",
+	Address:       "001 Test Drive",
+	State:         "AZ",
+	ZipCode:       "09999",
+	RequireSurvey: false,
+}
+
+var memberFormMemberTest = svc.MemberRegForm{
+	Email:     "example1@123.com",
+	FirstName: "John",
+	LastName:  "Doe",
+	Group:     "Level 1",
+	PhoneNum:  "654-321-0987",
+}
+
 func initTestMemberCC(s controllers.CCServer) {
 
 	// Create Institution for Tag-CC Test
-	instToCreate := svc.InstitutionForm{
-		Type:          string(svc.InstTypeHospital),
-		MemberType:    string(svc.MemberTypeStandard),
-		WorkflowType:  string(svc.WorkflowTypeCC),
-		Name:          "MEMBER_CC_TEST",
-		Address:       "001 Test Drive",
-		State:         "AZ",
-		ZipCode:       "09999",
-		RequireSurvey: false,
-	}
+	instToCreate := instFormMemberTest
 
 	res, err := svc.CreateInst(instToCreate)
 	if err != nil {
@@ -40,14 +47,8 @@ func initTestMemberCC(s controllers.CCServer) {
 	// Create Member for Member-CC Test
 	instID := res.InsertedID.(primitive.ObjectID).Hex()
 
-	memberToCreate := svc.MemberRegForm{
-		InstID:    instID,
-		Email:     "example1@123.com",
-		FirstName: "John",
-		LastName:  "Doe",
-		Group:     "Level 1",
-		PhoneNum:  "654-321-0987",
-	}
+	memberToCreate := memberFormMemberTest
+	memberToCreate.InstID = instID
 
 	_, err = svc.CreateMember(memberToCreate)
 	if err != nil {
@@ -56,7 +57,7 @@ func initTestMemberCC(s controllers.CCServer) {
 }
 
 func TestMemberCCScan(t *testing.T) {
-	instName := "MEMBER_CC_TEST"
+	instName := instFormMemberTest.Name
 
 	// Get Institution
 	var inst svc.Institution
@@ -85,35 +86,39 @@ func TestMemberCCScan(t *testing.T) {
 	var stage string
 	// Test Scan-1 - <memberID>|checkin|<timestamp>
 	stage = "checkin"
-	postCCSyncTestCase(t, instID, memberID)
-	data := makeGateKeeperPostMemberCC(t, memberID, stage, testTemperatureNormal, testDeviceIMEI)
+	postCCSync(t, getSyncRequestMember(instID, memberID))
+	data := makeGateKeeperPost(testTemperatureNormal, testDeviceIMEI,
+		getMemberUniqueID(memberID, stage))
 	postCCScanTestCase(t, data, getExpectedResponseCaseTempNormal(stage))
-	checkCCRecordMember(t, memberID, getExpectedRecordMember(memberID, svc.CCrCheckInComplete))
+	checkCCRecordMember(t, getExpectedRecordMember(memberID, svc.CCrCheckInComplete))
 	// Test Scan-2 - <memberID>|checkout|<timestamp>
 	stage = "checkout"
-	postCCSyncTestCase(t, instID, memberID)
-	data = makeGateKeeperPostMemberCC(t, memberID, stage, testTemperatureNormal, testDeviceIMEI)
+	postCCSync(t, getSyncRequestMember(instID, memberID))
+	data = makeGateKeeperPost(testTemperatureNormal, testDeviceIMEI,
+		getMemberUniqueID(memberID, stage))
 	postCCScanTestCase(t, data, getExpectedResponseCaseTempNormal(stage))
-	checkCCRecordMember(t, memberID, getExpectedRecordMember(memberID, svc.CCrCheckOutComplete))
-	// Test Scan-3 & 4 <memberID>|checkout|<timestamp> + HighTemperature
+	checkCCRecordMember(t, getExpectedRecordMember(memberID, svc.CCrCheckOutComplete))
+	// Test Scan-3 & 4 <memberID>|checkin|<timestamp> + HighTemperature
 	// Test Scan-3 (Posting Check-In with HighTemp)
 	stage = "checkin"
-	postCCSyncTestCase(t, instID, memberID)
-	data = makeGateKeeperPostMemberCC(t, memberID, stage, testTemperatureHigh, testDeviceIMEI)
+	postCCSync(t, getSyncRequestMember(instID, memberID))
+	data = makeGateKeeperPost(testTemperatureHigh, testDeviceIMEI,
+		getMemberUniqueID(memberID, stage))
 	postCCScanTestCase(t, data, getExpectedResponseCaseTempHigh(stage))
-	checkCCRecordMember(t, memberID, getExpectedRecordMember(memberID, svc.CCrFailed))
+	checkCCRecordMember(t, getExpectedRecordMember(memberID, svc.CCrFailed))
 	// Test Scan-4 (Posting Check-In again, so to make sure failed record will not require checkout stage)
 	stage = "checkin"
-	postCCSyncTestCase(t, instID, memberID)
-	data = makeGateKeeperPostMemberCC(t, memberID, stage, testTemperatureHigh, testDeviceIMEI)
+	postCCSync(t, getSyncRequestMember(instID, memberID))
+	data = makeGateKeeperPost(testTemperatureHigh, testDeviceIMEI,
+		getMemberUniqueID(memberID, stage))
 	postCCScanTestCase(t, data, getExpectedResponseCaseTempHigh(stage))
-	checkCCRecordMember(t, memberID, getExpectedRecordMember(memberID, svc.CCrFailed))
+	checkCCRecordMember(t, getExpectedRecordMember(memberID, svc.CCrFailed))
 }
 
-func checkCCRecordMember(t *testing.T, memberID string, expectedRecord svc.CCRecord) {
+func checkCCRecordMember(t *testing.T, expectedRecord svc.CCRecord) {
 	var ccRecord svc.CCRecord
 	ccParams := svc.GetCCRecordParams{
-		MemberTagID: memberID,
+		MemberTagID: expectedRecord.MT.Info.ID,
 		Status:      -1, // set Status to "-1" to disable status filter
 		GetLatest:   true,
 	}
@@ -122,48 +127,17 @@ func checkCCRecordMember(t *testing.T, memberID string, expectedRecord svc.CCRec
 	}
 
 	assert.Equal(t, expectedRecord.Status, ccRecord.Status)
-	assert.NotEmpty(t, ccRecord.MT)
 
+	assert.NotEmpty(t, ccRecord.MT)
 	assert.Equal(t, expectedRecord.MT.Info.ID, ccRecord.MT.Info.ID)
 	assert.Equal(t, expectedRecord.MT.Info.Name, strings.TrimSpace(ccRecord.MT.Info.Name))
 	assert.Equal(t, expectedRecord.MT.Info.Group, strings.TrimSpace(ccRecord.MT.Info.Group))
 	assert.Equal(t, expectedRecord.MT.Info.PhoneNum, strings.TrimSpace(ccRecord.MT.Info.PhoneNum))
 }
 
-func makeGateKeeperPostMemberCC(t *testing.T, memberID string, stage string, temperature string, imei string) url.Values {
+func getMemberUniqueID(memberID string, stage string) string {
 	timestamp := time.Now().Unix() * 1000
-	uniqueID := strings.Join([]string{memberID, stage, strconv.FormatInt(timestamp, 10)}, "|")
-	t.Logf("makeGateKeeperPostMemberCC - uniqueID is %v\n", uniqueID)
-
-	data := url.Values{}
-	data.Set("unique_transaction_id", uniqueID)
-	data.Set("temperature", temperature)
-	data.Set("scan_type", "0")
-	data.Set("device_id", imei)
-
-	return data
-}
-
-func postCCSyncTestCase(t *testing.T, instID string, memberID string) {
-	// make sync posting request
-	syncRequest := svc.CCSyncPostingForm{
-		InstID:   instID,
-		MemberID: &memberID,
-	}
-
-	syncRequestString, _ := json.Marshal(syncRequest)
-	req, _ := http.NewRequest("POST", "/api/cc-record/sync", strings.NewReader(string(syncRequestString)))
-	w := httptest.NewRecorder()
-	testRouter.ServeHTTP(w, req)
-
-	var respData SyncResponse
-	if err := json.Unmarshal(w.Body.Bytes(), &respData); err != nil {
-		panic(err)
-	}
-
-	t.Logf("postCCSyncTestCase - returned CCRecord: %v\n", respData.Data)
-
-	assert.Equal(t, 200, w.Code)
+	return strings.Join([]string{memberID, stage, strconv.FormatInt(timestamp, 10)}, "|")
 }
 
 func getExpectedRecordMember(memberID string, status svc.CCRecordStatus) svc.CCRecord {
@@ -180,4 +154,11 @@ func getExpectedRecordMember(memberID string, status svc.CCRecordStatus) svc.CCR
 		Status: status,
 	}
 	return expectedRecord
+}
+
+func getSyncRequestMember(instID string, memberID string) svc.CCSyncPostingForm {
+	return svc.CCSyncPostingForm{
+		InstID:   instID,
+		MemberID: &memberID,
+	}
 }

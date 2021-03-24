@@ -38,7 +38,7 @@ func (s *CCServer) AddVehicle(c *gin.Context) {
 
 	// Append New Vehicle to Family and Update in DB
 	vehicles := append(familyToAppend.Vehicles, newVehicle)
-	_, err = svc.ReplaceFamily(familyToAppend, familyToAppend.ContactMemberInfo, familyToAppend.Wards, vehicles)
+	_, err = svc.ReplaceFamily(familyToAppend, familyToAppend.ContactGuardianInfo, familyToAppend.Wards, vehicles)
 	if err != nil {
 		log.Printf("Error while adding Vehicle in DB - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -95,7 +95,7 @@ func (s *CCServer) UpdateVehicleByID(c *gin.Context) {
 	}
 
 	// Save updated family to DB
-	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.ContactMemberInfo, familyToUpdate.Wards, vehicles)
+	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.ContactGuardianInfo, familyToUpdate.Wards, vehicles)
 	if err != nil {
 		log.Printf("Error while updating Vehicle in DB - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -141,7 +141,7 @@ func (s *CCServer) DeleteVehicleByID(c *gin.Context) {
 	}
 
 	// Save updated family to DB
-	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.ContactMemberInfo, familyToUpdate.Wards, vehicles)
+	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.ContactGuardianInfo, familyToUpdate.Wards, vehicles)
 
 	if err != nil {
 		log.Printf("Error while removing Vehicle in DB - %v\n", err)

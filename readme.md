@@ -18,6 +18,6 @@
 If Succeed, the shell returns info: `WriteResult({ "nMatched" : 1, "nUpserted" : 0, "nModified" : 1 })`
 
 ### Testing the Code
-0. Testing is recommended after changing/refractoring the code.
+0. **Testing is recommended** after changing/refractoring the code.
 1. To run tests, run following command in cmd: `go clean -testcache; go test ./tests`
 2. (Optional) to show debug info when testing, append `-v` option to `go test` (`go test ./tests -v`) 

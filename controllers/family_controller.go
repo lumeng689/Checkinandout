@@ -93,7 +93,7 @@ func (s *CCServer) GetFamilyWithMembersByID(c *gin.Context) {
 		ID:                family.ID.Hex(),
 		InstID:            family.InstID,
 		AllRegCodeSent:    family.AllRegCodeSent,
-		ContactMemberInfo: family.ContactMemberInfo,
+		ContactMemberInfo: family.ContactGuardianInfo,
 		Members:           members,
 		Wards:             family.Wards,
 		Vehicles:          family.Vehicles,
@@ -150,7 +150,7 @@ func (s *CCServer) GetFamilyWithMembers(c *gin.Context) {
 		ID:                family.ID.Hex(),
 		InstID:            family.InstID,
 		AllRegCodeSent:    family.AllRegCodeSent,
-		ContactMemberInfo: family.ContactMemberInfo,
+		ContactMemberInfo: family.ContactGuardianInfo,
 		Members:           members,
 		Wards:             family.Wards,
 		Vehicles:          family.Vehicles,
@@ -214,35 +214,40 @@ func (s *CCServer) CreateFamily(c *gin.Context) {
 		}
 	}
 
-	// Preparing for Creating Family
-	wardsToCreate := []svc.Ward{}
-	vehiclesToCreate := []svc.Vehicle{}
-	for _, wForm := range fRegForm.Wards {
-		newWard := svc.GetNewWard(wForm)
-		wardsToCreate = append(wardsToCreate, newWard)
-	}
-	for _, vForm := range fRegForm.Vehicles {
-		newVehicle := svc.GetNewVehicle(vForm)
-		vehiclesToCreate = append(vehiclesToCreate, newVehicle)
-	}
+	// // Preparing for Creating Family
+	// wardsToCreate := []svc.Ward{}
+	// vehiclesToCreate := []svc.Vehicle{}
+	// for _, wForm := range fRegForm.Wards {
+	// 	newWard := svc.GetNewWard(wForm)
+	// 	wardsToCreate = append(wardsToCreate, newWard)
+	// }
+	// for _, vForm := range fRegForm.Vehicles {
+	// 	newVehicle := svc.GetNewVehicle(vForm)
+	// 	vehiclesToCreate = append(vehiclesToCreate, newVehicle)
+	// }
 
-	// Create Family, but without family info
-	cMemberInFamilyRegForm := fRegForm.Members[0]
-	fRes, err := svc.CreateFamily(fRegForm, cMemberInFamilyRegForm, wardsToCreate, vehiclesToCreate)
-	if err != nil {
-		log.Printf("Error while inserting new Family into DB - %v\n", err)
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"message": "Something went wrong",
-		})
+	// // Create Family, but without family info
+	// cMemberInFamilyRegForm := fRegForm.Members[0]
+	// fRes, err := svc.CreateFamily(fRegForm, cMemberInFamilyRegForm, wardsToCreate, vehiclesToCreate)
+	// if err != nil {
+	// 	log.Printf("Error while inserting new Family into DB - %v\n", err)
+	// 	c.JSON(http.StatusInternalServerError, gin.H{
+	// 		"message": "Something went wrong",
+	// 	})
+	// 	return
+	// }
+
+	insertedFamilyID, ok := handleCreateFamily(c, &fRegForm)
+	if !ok {
 		return
 	}
 
 	// Create Members with FamilyID
-	familyID := fRes.InsertedID.(primitive.ObjectID).Hex()
+	// insertedFamilyID := fRes.InsertedID.(primitive.ObjectID).Hex()
 	var contactMemberID string
 	for index, mInFamilyRegForm := range fRegForm.Members {
 		fInfo := svc.FamilyInfo{
-			ID:       familyID,
+			ID:       insertedFamilyID,
 			Relation: mInFamilyRegForm.Relation,
 		}
 		mRegForm := svc.MemberRegForm{
@@ -253,7 +258,7 @@ func (s *CCServer) CreateFamily(c *gin.Context) {
 			FirstName:  mInFamilyRegForm.FirstName,
 			LastName:   mInFamilyRegForm.LastName,
 		}
-		insertedMemberID, ok := s.handleCreateMember(c, &mRegForm)
+		insertedMemberID, ok := handleCreateMember(c, &mRegForm)
 		if !ok {
 			return
 		}
@@ -270,7 +275,7 @@ func (s *CCServer) CreateFamily(c *gin.Context) {
 	}
 
 	// Set Contact Member ID to Family
-	_, err = svc.SetFamilyContactMemberID(familyID, contactMemberID)
+	_, err = svc.SetFamilyContactMemberID(insertedFamilyID, contactMemberID)
 	if err != nil {
 		log.Printf("Error while setting Contact MemberID to Family - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -338,4 +343,31 @@ func (s *CCServer) getFamilyByWardID(c *gin.Context, wardID string) {
 		"data":    family,
 	})
 	return
+}
+
+func handleCreateFamily(c *gin.Context, fRegForm *svc.FamilyRegForm) (string, bool) {
+
+	// Preparing for Creating Family
+	wardsToCreate := []svc.Ward{}
+	vehiclesToCreate := []svc.Vehicle{}
+	for _, wForm := range fRegForm.Wards {
+		newWard := svc.GetNewWard(wForm)
+		wardsToCreate = append(wardsToCreate, newWard)
+	}
+	for _, vForm := range fRegForm.Vehicles {
+		newVehicle := svc.GetNewVehicle(vForm)
+		vehiclesToCreate = append(vehiclesToCreate, newVehicle)
+	}
+
+	// Create Family, but without family info
+	cMemberInFamilyRegForm := fRegForm.Members[0]
+	fRes, err := svc.CreateFamily(*fRegForm, cMemberInFamilyRegForm, wardsToCreate, vehiclesToCreate)
+	if err != nil {
+		log.Printf("Error while inserting new Family into DB - %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Something went wrong",
+		})
+		return "", false
+	}
+	return fRes.InsertedID.(primitive.ObjectID).Hex(), true
 }

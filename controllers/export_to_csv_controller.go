@@ -189,7 +189,7 @@ func (s *CCServer) ExportManyFamilies(c *gin.Context) {
 
 	for _, family := range *families {
 
-		contactGuardian := family.ContactMemberInfo
+		contactGuardian := family.ContactGuardianInfo
 		var record []string
 		record = append(record, contactGuardian.Name)
 		record = append(record, contactGuardian.PhoneNum)

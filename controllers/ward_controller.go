@@ -38,7 +38,7 @@ func (s *CCServer) AddWard(c *gin.Context) {
 
 	// Append New Ward to Family and Update in DB
 	wards := append(familyToAppend.Wards, newWard)
-	_, err = svc.ReplaceFamily(familyToAppend, familyToAppend.ContactMemberInfo, wards, familyToAppend.Vehicles)
+	_, err = svc.ReplaceFamily(familyToAppend, familyToAppend.ContactGuardianInfo, wards, familyToAppend.Vehicles)
 	if err != nil {
 		log.Printf("Error while adding Ward in DB - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -94,7 +94,7 @@ func (s *CCServer) UpdateWardByID(c *gin.Context) {
 	}
 
 	// Save updated family to DB
-	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.ContactMemberInfo, wards, familyToUpdate.Vehicles)
+	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.ContactGuardianInfo, wards, familyToUpdate.Vehicles)
 	if err != nil {
 		log.Printf("Error while updating Ward in DB - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -150,7 +150,7 @@ func (s *CCServer) DeleteWardByID(c *gin.Context) {
 		}
 	}
 	// Save updated family to DB
-	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.ContactMemberInfo, wards, familyToUpdate.Vehicles)
+	_, err = svc.ReplaceFamily(familyToUpdate, familyToUpdate.ContactGuardianInfo, wards, familyToUpdate.Vehicles)
 
 	if err != nil {
 		log.Printf("Error while deleting Ward in DB - %v\n", err)
