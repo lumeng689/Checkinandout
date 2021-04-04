@@ -1,7 +1,7 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
 import VuexPersistence from 'vuex-persist'
-import BootstrapVue from "bootstrap-vue"
+import { BootstrapVue, BootstrapVueIcons } from 'bootstrap-vue'
 import VueRouter from 'vue-router'
 import App from './App.vue'
 import "bootstrap/dist/css/bootstrap.min.css"
@@ -10,6 +10,7 @@ import routes from './router'
 
 Vue.config.productionTip = false
 Vue.use(BootstrapVue)
+Vue.use(BootstrapVueIcons)
 Vue.use(VueRouter)
 Vue.use(Vuex)
 
