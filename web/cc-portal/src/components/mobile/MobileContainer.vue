@@ -1,19 +1,19 @@
 <template>
-  <div>
-    <b-navbar class="mb-2" sticky type="dark" variant="dark">
+  <div class="background-image">
+    <!-- <b-navbar v-if="loggedInMember !== null" class="mb-2" sticky type="dark" variant="dark">
       <b-navbar-brand href="#">
         <img src="../../assets/mAIRobotics Logo White Transparent-h30.png" alt />
       </b-navbar-brand>
       <b-navbar-nav class="ml-auto">
-        <b-nav-item-dropdown v-if="showUser" right>
-          <!-- Using 'button-content' slot -->
-          <template #button-content>
+        <b-nav-item-dropdown v-if="showUser" right> -->
+          <!--  Using 'button-content' slot -->
+          <!-- <template #button-content>
             <em>{{loggedInMemberName}}</em>
           </template>
           <b-dropdown-item @click="onSignOut">Sign Out</b-dropdown-item>
         </b-nav-item-dropdown>
       </b-navbar-nav>
-    </b-navbar>
+    </b-navbar> -->
     <router-view></router-view>
   </div>
 </template>
@@ -21,11 +21,13 @@
 // import config from "../../config";
 export default {
   name: "MobileContainer",
+
   data() {
     return {
       loggedInMember: null,
     };
   },
+
   computed: {
     loggedInMemberName() {
       if (this.loggedInMember === null) {
@@ -67,3 +69,12 @@ export default {
   },
 };
 </script>
+
+<style>
+.background-image{
+ background-image: url("../../assets/background.png");
+ background-size: 100vw;
+ background-repeat: no-repeat;
+ background-color: rgb(250, 250, 250);
+}
+</style>

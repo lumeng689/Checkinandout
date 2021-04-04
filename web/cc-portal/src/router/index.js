@@ -10,6 +10,7 @@ import Admins from "../components/Admins";
 import AdminProfile from "../components/AdminProfile"
 import AdminSettings from "../components/AdminSettings"
 import Mobile from "../components/mobile/Mobile"
+import MobileRegistration from "../components/mobile/MobileRegistration"
 import MobileLogin from "../components/mobile/MobileLogin"
 import MobileActivate from "../components/mobile/MobileActivate"
 import MobileContainer from "../components/mobile/MobileContainer"
@@ -83,7 +84,12 @@ const routes = [
       {
         path:"/mobile/login",
         component: MobileLogin,
+      },
+      {
+        path:"/mobile/registration",
+        component: MobileRegistration,
       }
+      
     ]
   },
   {

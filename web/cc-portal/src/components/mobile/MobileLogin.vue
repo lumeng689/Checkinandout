@@ -1,18 +1,52 @@
 <template>
-  <b-container>
-    <h4>Login User</h4>
-    <b-form style="margin-top: 50px;" @submit="onMemberLogin">
-      <b-form-group label="Phone #: " label-align="left" label-for="phone-number-input" description="Phone # is for authentication purpose only">
-        <b-form-input id="phone-number-input" v-model="phoneNum" placeholder="Enter Phone #" required @keyup="focusOut" @blur="focusOut"></b-form-input>
-      </b-form-group>
-      <b-row class="ml-1 mb-2">
-        <b-button type="submit" variant="primary">Login</b-button>
-      </b-row>
+  <div id="wrap">
+    <div class="form-head">
+      <div class="logo">
+        <img
+          class="header-image"
+          src="../../assets/mAIRobotics_Logo_300px.png"
+        />
+      </div>
+      <div class="welcome">
+        <p class="welcome-text">Welcome Back</p>
+      </div>
+    </div>
+
+    <b-form class="form" @submit="onMemberLogin">
+      <div class="row">
+        <b-input-group>
+          <input
+            id="phone-number-input"
+            type="text"
+            class="form-control form-rounded form-control-lg"
+            v-model="phoneNum"
+            placeholder="Phone Number"
+            required
+            @keyup="focusOut"
+            @blur="focusOut"
+          />
+        </b-input-group>
+      </div>
+      <div class="row" id="sign-in-button-div">
+        <b-button
+          class="sign-in-button"
+          pill
+          type="submit"
+          block
+          variant="dark"
+          size="lg"
+        >
+          Sign In
+        </b-button>
+      </div>
+      <div class="link-to-pages">
+        First time user?
+        <b-link @click="$router.push('/mobile/activate')"
+          > Active Account
+        </b-link>
+      </div>
     </b-form>
-    <b-row class="ml-1">
-      <b-button variant="warning" @click="$router.push('/mobile/activate')">To Activate Page</b-button>
-    </b-row>
-  </b-container>
+  </div>
 </template>
 
 <script>
@@ -56,9 +90,9 @@ export default {
         // On Success, set LoggedInMember and Login
         (response) => {
           // Determine if Family Mode should be used
-          console.log(`onMemberLogin response - ${response}`)
-          var member = response.member
-          var family = response.family
+          console.log(`onMemberLogin response - ${response}`);
+          var member = response.member;
+          var family = response.family;
           if (!member) return;
           _this.$store.commit("setLoggedInMember", member);
           if (family) _this.$store.commit("setLoggedInFamily", family);
@@ -81,7 +115,7 @@ export default {
       const query = config.API_LOCATION + "member/login";
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-      http.onreadystatechange = function () {
+      http.onreadystatechange = function() {
         if (this.readyState === 4 && this.status === 200) {
           var responseData = JSON.parse(this.responseText).data;
           if (responseData && successCallback != null) {
@@ -122,7 +156,7 @@ export default {
       console.log(`MobileLogin - getInst query: ${query}`);
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-      http.onreadystatechange = function () {
+      http.onreadystatechange = function() {
         if (this.readyState === 4 && this.status === 200) {
           // console.log(this.responseText)
           if (this.responseText.length == 0) {
@@ -145,3 +179,68 @@ export default {
   },
 };
 </script>
+
+<style>
+#wrap {
+  width: 100vw;
+  height: 90vh;
+}
+
+#wrap .form-head {
+  height: 40vh;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  padding: 5vh;
+}
+
+.logo {
+  height: 27vh;
+}
+
+.header-image {
+  width: 25vh;
+  height: 4vh;
+}
+
+.welcome {
+  text-align: center;
+  font: 2em sans-serif;
+}
+
+.welcome-text {
+  color: rgb(59, 231, 223);
+  font-weight: bold;
+}
+
+#phone-number-input {
+  border-radius: 50px;
+  background-color: rgba(182, 182, 182, 0.568);
+  border: 0;
+}
+
+#wrap .form {
+  position: absolute;
+  height: 50vh;
+  width: 100%;
+  align-self: center;
+  position: absolute;
+  padding-left: 4rem;
+  padding-right: 4rem;
+}
+
+#sign-in-button-div {
+  padding-top: 22vh;
+  text-transform: uppercase;
+}
+
+.sign-in-button {
+  color: rgb(59, 231, 223);
+}
+
+.link-to-pages {
+  text-align: center;
+  padding-top: 5%;
+  font-size: 1rem;
+}
+</style>
