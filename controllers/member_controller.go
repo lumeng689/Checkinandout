@@ -85,7 +85,7 @@ func (s *CCServer) CreateMember(c *gin.Context) {
 		return
 	}
 
-	_, ok := s.handleCreateMember(c, &mRegForm)
+	_, ok := handleCreateMember(c, &mRegForm)
 
 	if ok {
 		c.JSON(http.StatusCreated, gin.H{
@@ -353,7 +353,7 @@ func (s *CCServer) DeleteMemberByID(c *gin.Context) {
 }
 
 // handleCreateMember - return (memberID, ok)
-func (s *CCServer) handleCreateMember(c *gin.Context, mRegForm *svc.MemberRegForm) (string, bool) {
+func handleCreateMember(c *gin.Context, mRegForm *svc.MemberRegForm) (string, bool) {
 
 	// Create Member
 	res, err := svc.CreateMember(*mRegForm)

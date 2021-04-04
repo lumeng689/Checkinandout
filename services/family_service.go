@@ -51,13 +51,13 @@ type Vehicle struct {
 
 // Family is the top-level struct, consisting of Guardians and Wards
 type Family struct {
-	ID                primitive.ObjectID `bson:"_id" json:"_id"`
-	InstID            string             `bson:"institution_id" json:"institution_id"`
-	AllRegCodeSent    bool               `json:"all_reg_code_sent"`
-	ContactMemberInfo MemberTagInfo      `bson:"contact_member_info" json:"contact_member_info"`
-	Wards             []Ward             `json:"wards"`
-	Vehicles          []Vehicle          `json:"vehicles"`
-	ModifiedAt        time.Time          `bson:"modified_at" json:"modified_at"`
+	ID                  primitive.ObjectID `bson:"_id" json:"_id"`
+	InstID              string             `bson:"institution_id" json:"institution_id"`
+	AllRegCodeSent      bool               `json:"all_reg_code_sent"`
+	ContactGuardianInfo MemberTagInfo      `bson:"contact_member_info" json:"contact_member_info"`
+	Wards               []Ward             `json:"wards"`
+	Vehicles            []Vehicle          `json:"vehicles"`
+	ModifiedAt          time.Time          `bson:"modified_at" json:"modified_at"`
 }
 
 // GetFamilyParams - QueryString Params for GetFamily
@@ -106,13 +106,13 @@ func CreateFamily(f FamilyRegForm, cMember MemberInFamilyRegForm, ws []Ward, vs 
 	}
 
 	newFamily := Family{
-		ID:                primitive.NewObjectID(),
-		InstID:            f.InstID,
-		AllRegCodeSent:    false,
-		ContactMemberInfo: cMemberInfo,
-		Wards:             ws,
-		Vehicles:          vs,
-		ModifiedAt:        time.Now(),
+		ID:                  primitive.NewObjectID(),
+		InstID:              f.InstID,
+		AllRegCodeSent:      false,
+		ContactGuardianInfo: cMemberInfo,
+		Wards:               ws,
+		Vehicles:            vs,
+		ModifiedAt:          time.Now(),
 	}
 
 	return familyCollection.InsertOne(context.TODO(), newFamily)
@@ -185,12 +185,12 @@ func DeleteFamilyByID(idToDelete string) (*mongo.DeleteResult, error) {
 
 func getFamilyToReplace(f Family, cMemberInfo MemberTagInfo, ws []Ward, vs []Vehicle) Family {
 	return Family{
-		ID:                f.ID,
-		InstID:            f.InstID,
-		AllRegCodeSent:    f.AllRegCodeSent,
-		ContactMemberInfo: cMemberInfo,
-		Wards:             ws,
-		Vehicles:          vs,
-		ModifiedAt:        time.Now(),
+		ID:                  f.ID,
+		InstID:              f.InstID,
+		AllRegCodeSent:      f.AllRegCodeSent,
+		ContactGuardianInfo: cMemberInfo,
+		Wards:               ws,
+		Vehicles:            vs,
+		ModifiedAt:          time.Now(),
 	}
 }

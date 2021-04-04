@@ -350,29 +350,12 @@ type parsedScanResult struct {
 
 func parseScanResult(s string) *parsedScanResult {
 	contents := strings.Split(s, "|")
-	isSingleEvent := true
-	var scanTime time.Time
-	// GW Case
-	if len(contents) == 5 {
-		if contents[3] == "all" {
-			isSingleEvent = false
-		}
-		timestamp, _ := strconv.ParseInt(contents[4], 10, 64)
-		scanTime = time.Unix(timestamp/1000, 0)
-		return &parsedScanResult{
-			MemberTagID:   contents[0],
-			WardID:        contents[1],
-			Stage:         contents[2],
-			isSingleEvent: isSingleEvent,
-			Time:          scanTime,
-			Type:          ScanResultGWType,
-		}
-	}
+	timestamp, _ := strconv.ParseInt(contents[len(contents)-1], 10, 64)
+	scanTime := time.Unix(timestamp/1000, 0)
+	// log.Println("scanned timestamp - ", timestamp)
+
 	// Member Case
 	if len(contents) == 3 {
-		timestamp, _ := strconv.ParseInt(contents[2], 10, 64)
-		// log.Println("scanned timestamp - ", timestamp)
-		scanTime = time.Unix(timestamp/1000, 0)
 		return &parsedScanResult{
 			MemberTagID: contents[0],
 			Stage:       contents[1],
@@ -382,15 +365,35 @@ func parseScanResult(s string) *parsedScanResult {
 	}
 
 	// Tag Case
-	if len(contents) == 4 {
-		timestamp, _ := strconv.ParseInt(contents[3], 10, 64)
-		// log.Println("scanned timestamp - ", timestamp)
-		scanTime = time.Unix(timestamp/1000, 0)
+	// If [length of Identifier] < 24, regard it as Tag case
+	if len(contents) == 4 && len(contents[0]) < 24 {
 		return &parsedScanResult{
 			InstIdentifier: contents[0],
 			MemberTagID:    contents[1],
 			Time:           scanTime,
 			Type:           ScanResultTagType,
+		}
+	}
+
+	// GW Case - All
+	if len(contents) == 4 && contents[2] == "all" {
+		return &parsedScanResult{
+			MemberTagID:   contents[0],
+			Stage:         contents[1],
+			isSingleEvent: false,
+			Time:          scanTime,
+			Type:          ScanResultGWType,
+		}
+	}
+	// GW Case - Single
+	if len(contents) == 5 && contents[3] == "single" {
+		return &parsedScanResult{
+			MemberTagID:   contents[0],
+			WardID:        contents[1],
+			Stage:         contents[2],
+			isSingleEvent: true,
+			Time:          scanTime,
+			Type:          ScanResultGWType,
 		}
 	}
 

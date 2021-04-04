@@ -43,9 +43,9 @@ type MemberTagInfo struct {
 
 // CCSyncPostingForm - Can Create multiple CCRecords
 type CCSyncPostingForm struct {
-	InstID   string    `json:"institution_id"`
-	MemberID *string   `json:"member_id"`
-	WardIDs  *[]string `json:"ward_ids"`
+	InstID     string    `json:"institution_id"`
+	MemberID   *string   `json:"member_id"`
+	WardIDList *[]string `json:"ward_ids"`
 }
 
 // ScanPostingForm - As Name Suggests
