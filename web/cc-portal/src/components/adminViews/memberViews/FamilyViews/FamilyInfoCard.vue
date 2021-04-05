@@ -139,7 +139,7 @@
 </template>
 
 <script>
-import config from "../../../config";
+import config from "../../../../config";
 const queryString = require("query-string");
 export default {
   name: "FamilyInfoCard",
@@ -147,6 +147,7 @@ export default {
   data() {
     var modalItem = this.getNewModalItem();
     return {
+      loggedInToken: "",
       modalItem: modalItem,
       modalAction: "Update",
       currentRegCode: null,
@@ -210,7 +211,10 @@ export default {
       return this.itemType.charAt(0).toUpperCase() + this.itemType.slice(1)
     },
   },
-  created() {},
+  created() {
+    this.loggedInToken = this.$store.state.loggedInToken;
+
+  },
   watch: {
     entities: function () {
       if (this.items.length === 0) {
@@ -291,6 +295,7 @@ export default {
       const query = config.API_LOCATION + "reg-code?" + queryArgs;
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);
@@ -317,6 +322,7 @@ export default {
       const query = config.API_LOCATION + "reg-code/sms";
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           var response = JSON.parse(this.responseText);

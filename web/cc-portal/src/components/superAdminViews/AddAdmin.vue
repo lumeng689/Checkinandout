@@ -32,7 +32,7 @@
 </template>
 
 <script>
-import config from "../config";
+import config from "../../config";
 export default {
   name: "AddAdmin",
   data() {
@@ -82,6 +82,7 @@ export default {
       const query = config.API_LOCATION + "admin/register";
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${config.SUPER_ADMIN_TOKEN}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 201) {
           var response = JSON.parse(this.responseText);
@@ -104,6 +105,7 @@ export default {
       const query = config.API_LOCATION + "institutions";
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${config.SUPER_ADMIN_TOKEN}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           var response = JSON.parse(this.responseText);

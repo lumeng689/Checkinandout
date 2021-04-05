@@ -25,7 +25,7 @@
   </b-container>
 </template>
 <script>
-import config from "../../../config";
+import config from "../../../../config";
 const queryString = require("query-string");
 import FamilyInfoCard from "./FamilyInfoCard.vue";
 export default {
@@ -36,6 +36,7 @@ export default {
   data() {
     return {
       loadedFamilyWithMembers: null,
+      loggedInToken: "",
     };
   },
   computed: {
@@ -54,6 +55,7 @@ export default {
   },
   created() {
     this.loadedFamilyWithMembers = this.$store.state.loadedFamilyWithMembers;
+    this.loggedInToken = this.$store.state.loggedInToken;
   },
   methods: {
     addNewMemberToDB(entity) {
@@ -62,6 +64,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 201) {
           // var response = JSON.parse(this.responseText);
@@ -89,6 +92,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("PUT", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);
@@ -115,6 +119,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("DELETE", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);
@@ -143,6 +148,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 201) {
           // var response = JSON.parse(this.responseText);
@@ -169,6 +175,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("PUT", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);
@@ -195,6 +202,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("DELETE", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);
@@ -223,6 +231,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 201) {
           // var response = JSON.parse(this.responseText);
@@ -249,6 +258,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("PUT", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);
@@ -275,6 +285,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("DELETE", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);
@@ -304,6 +315,7 @@ export default {
       console.log(`getFamilyWithMembersByID - query: ${query}`);
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // console.log(this.responseText)

@@ -2,10 +2,10 @@
   <b-container class="h-100 ml-2 mr-2" fluid>
     <b-row class="ml-2 mt-4" style="margin-bottom: 30px;" align-h="between">
       <b-col xl="3" lg="4">
-        <h2>Tags Dashboard</h2>
+        <h2>Members Dashboard</h2>
       </b-col>
       <b-col xl="2" md="4">
-        <b-button variant="primary" @click="onOpenTagImportModal()">Import Tags</b-button>
+        <b-button variant="primary" @click="onCreateMember()">Add Member</b-button>
       </b-col>
     </b-row>
     <b-card class="h-100 ml-4 mr-4">
@@ -20,9 +20,10 @@
           </b-col>
           <b-col xl="7" lg="12" class="my-1" align-self="end">
             <b-row align-h="end">
+              <b-button class="mr-2 mb-2" variant="info" :disabled="disableSingleAction" @click="onCheckRegCode">RegCode</b-button>
               <b-button class="mr-2 mb-2" variant="info" :disabled="disableSingleAction" @click="onEditSelected">Edit</b-button>
               <b-button class="mr-2 mb-2" variant="danger" :disabled="disableManyAction" @click="onDeleteSelected">Delete</b-button>
-              <b-button class="mr-2 mb-2" variant="outline-secondary" :disabled="disableManyAction" @click="onClearSelect">Clear Select</b-button>
+              <b-button class="mr-2 mb-2" variant="outline-secondary" :disabled="disableManyAction" @click="onClearSelected">Clear Select</b-button>
             </b-row>
           </b-col>
         </b-row>
@@ -44,9 +45,9 @@
           @filtered="onFiltered"
         ></b-table>
         <b-pagination v-model="currentPage" :total-rows="numRows" :per-page="perPage" aria-controls="dashboard-table"></b-pagination>
-        <b-modal ref="edit-modal" hide-footer title="Edit Tag">
+        <b-modal ref="edit-modal" hide-footer title="Edit Member">
           <div class="d-block text-left">
-            <h3>Update Tag</h3>
+            <h3>{{modalAction}} Member</h3>
             <b-form>
               <b-form-row class="mb-2 mr-2">
                 <b-col sm="6">
@@ -74,54 +75,70 @@
                 </b-col>
               </b-form-row>
               <b-row class="mr-2" align-h="end">
-                <b-button variant="primary" @click="onFormSubmit()">Update</b-button>
+                <b-button variant="primary" @click="onFormSubmit">{{modalAction}}</b-button>
               </b-row>
             </b-form>
           </div>
         </b-modal>
+        <b-modal ref="reg-code-modal" hide-footer title="Check Registration Code">
+          <div class="d-block test-left ml-4 mb-2">
+            Registration Code for
+            <b>{{modalItem.first_name + " " + modalItem.last_name}}</b> is
+            <b>{{displayRegCode}}</b>
+          </div>
+          <b-form>
+            <b-input-group class="mb-2" prepend="Phone #">
+              <b-form-input id="regcode-phone-input" v-model="regCodePhoneNum" placeholder="xxx-xxx-xxxx"></b-form-input>
+            </b-input-group>
+          </b-form>
+          <b-row class="mr-1" align-h="end">
+            <b-button variant="primary" @click="onSendRegCode">Send RegCode</b-button>
+          </b-row>
+        </b-modal>
       </b-container>
-      <b-modal ref="import-modal" hide-footer title="Import Tags">
-        <h3>Select a CSV File</h3>
-        <b-form-file v-model="tagCSVFile" plain></b-form-file>
-        <b-row class="mr-1" align-h="end">
-          <b-button variant="primary" @click="onImportTags">Import</b-button>
-        </b-row>
-      </b-modal>
     </b-card>
   </b-container>
 </template>
 
 <script>
-import config from "../../config";
+import config from "../../../config";
 const queryString = require("query-string");
 export default {
-  name: "TagDashboard",
+  name: "MemberDashboard",
   data() {
-    var modalItem = this.getNewTagModalItem();
+    var modalItem = this.getNewMemberModalItem();
     return {
       instId: "",
+      loggedInToken: "",
+      // Table fields
       currentPage: 1,
       perPage: 20,
-      fields: ["tag_number", "name", "group", "phone", "email"],
+      fields: ["name", "group", "phone", "email", "status"],
       items: [],
       selectedItems: [],
       nameFilter: "",
-      filterOn: ["tag_number"],
+      filterOn: ["name"],
+      // Member Edit Modal Fields
       modalItem: modalItem,
-      tagCSVFile: null,
+      modalAction: "Update",
+      // RegCode fields
+      currentRegCode: null,
+      currentMember: null,
+      regCodePhoneNum: "",
     };
   },
   mounted() {
     // console.log(`mode: ${this.mode}`)
     // console.log(`isTagMode: ${this.isTagMode}`)
     var activeUser = this.$store.state.activeUser;
+    this.loggedInToken = this.$store.state.loggedInToken
     if (activeUser != null) {
       console.log(
         `Member Dashboard mounted!, instId - ${activeUser.institution_id}`
       );
       this.instId = activeUser.institution_id;
     }
-    this.getTagsFromDb();
+    this.getMembersFromDb();
   },
   computed: {
     disableSingleAction() {
@@ -136,16 +153,21 @@ export default {
     filter() {
       return this.nameFilter;
     },
+    displayRegCode() {
+      if (this.currentRegCode === null) return "";
+      return this.currentRegCode.reg_code;
+    }
   },
   methods: {
-    mapTagToItem(tag) {
+    mapMemberToItem(member) {
+      var statusDisplay = member.status === 2 ? "activated" : "assigned";
       return {
-        self: tag,
-        tag_number: tag.tag_string,
-        name: tag.first_name + " " + tag.last_name,
-        group: tag.group,
-        phone: tag.phone_num,
-        email: tag.email,
+        self: member,
+        name: member.first_name + " " + member.last_name,
+        group: member.group,
+        phone: member.phone_num,
+        email: member.email,
+        status: statusDisplay,
       };
     },
     onRowSelected(items) {
@@ -153,13 +175,14 @@ export default {
       if (items[0] === undefined) return;
       this.selectedItems = items;
     },
-    onClearSelect() {
+    onClearSelected() {
       this.selectedItems = [];
       this.$refs.dashboardTable.clearSelected();
     },
     onEditSelected() {
       var item = this.selectedItems[0];
       if (item != null) {
+        this.modalAction = "Update";
         this.modalItem = item.self;
         console.log(
           `onEditMember - modalItem: ${JSON.stringify(this.modalItem)}`
@@ -167,27 +190,41 @@ export default {
         this.$refs["edit-modal"].show();
       }
     },
+    onCreateMember() {
+      this.modalAction = "Create";
+      this.modalItem = this.getNewMemberModalItem();
+      this.$refs["edit-modal"].show();
+    },
     onDeleteSelected() {
       var IDListToDelete = this.selectedItems.map((item) => {
         return item.self._id;
       })
       IDListToDelete.forEach((idToDelete) => {
-        this.deleteTagByIdInDb(idToDelete);
+        this.deleteMemberInDb(idToDelete);
       })
       setTimeout(() => {
-        this.getTagsFromDb();
+        this.getMembersFromDb();
       }, 500)
-
+      // this.deleteMemberInDb(this.selectedItems[0].self._id)
     },
     onFormSubmit() {
-      this.updateTagToDb();
+      if (this.modalAction === "Update") {
+        this.updateMemberToDb();
+      } else if (this.modalAction === "Create") {
+        this.createMemberInDb();
+      }
     },
-    onOpenTagImportModal(){
-      this.$refs["import-modal"].show();
+    onCheckRegCode() {
+      this.currentMember = this.selectedItems[0]
+      console.log(`currentMember - ${JSON.stringify(this.currentMember)}`)
+      this.getRegCodeByMemberIDFromDb(this.currentMember.self._id);
+      this.regCodePhoneNum = this.currentMember.self.phone_num;
+      this.$refs["reg-code-modal"].show();
+      this.onClearSelected()
     },
-    onImportTags() {
-      this.$refs["import-modal"].hide();
-      this.importTagsToDb();
+    onSendRegCode() {
+      this.sendRegCodeWithSMS();
+      this.$refs["reg-code-modal"].hide();
     },
     onFiltered(filteredItems) {
       this.totalRows = filteredItems.length;
@@ -201,26 +238,27 @@ export default {
       }
       return namePred;
     },
-    getTagsFromDb() {
+    getMembersFromDb() {
       var _this = this;
       const queryParams = { instID: this.instId };
       const queryArgs = queryString.stringify(queryParams);
 
-      var query = config.API_LOCATION + "tags?" + queryArgs;
+      var query = config.API_LOCATION + "members?" + queryArgs;
 
       const http = new XMLHttpRequest();
       console.log(`Members: getMembers query -  ${query}`);
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // console.log(this.responseText);
           //// if data received with no error, add to table
-          var tags = JSON.parse(this.responseText).data;
-          // console.log(JSON.stringify(_this.families));
-          if (tags) {
-            _this.items = tags.map((tag) => {
-              return _this.mapTagToItem(tag);
+          var members = JSON.parse(this.responseText).data;
+          console.log(JSON.stringify(members));
+          if (members) {
+            _this.items = members.map((member) => {
+              return _this.mapMemberToItem(member);
             });
           }
           // console.log("Event_Table: items: " + JSON.stringify(this.items));
@@ -234,19 +272,20 @@ export default {
         alert(e);
       }
     },
-    updateTagToDb() {
-      var tagToSubmit = this.modalItem;
+    updateMemberToDb() {
+      var memberToSubmit = this.modalItem;
       var _this = this;
       const http = new XMLHttpRequest();
-      const query = config.API_LOCATION + "tag/" + this.modalItem._id;
+      const query = config.API_LOCATION + "member/" + this.modalItem._id;
       console.log(`Tags: update Tags query -  ${query}`);
       http.open("PUT", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);
           console.log("update succeed!");
-          _this.getTagsFromDb();
+          _this.getMembersFromDb();
           _this.$bvToast.toast(this.responseText, {
             title: "DataBase Message",
             autoHideDelay: 2000,
@@ -256,18 +295,54 @@ export default {
         }
       };
       try {
-        http.send(JSON.stringify(tagToSubmit));
+        http.send(JSON.stringify(memberToSubmit));
       } catch (e) {
         alert(e);
       }
     },
-    deleteTagByIdInDb(tagID) {
+    createMemberInDb() {
       var _this = this;
       const http = new XMLHttpRequest();
-      const query = config.API_LOCATION + "tag/" + tagID;
+      const query = config.API_LOCATION + "member";
+      console.log(`Tags: update Tags query -  ${query}`);
+      http.open("POST", query, true);
+      http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
+      http.onreadystatechange = function () {
+        if (this.readyState === 4 && this.status === 201) {
+          // var response = JSON.parse(this.responseText);
+          console.log("create succeed!");
+          _this.getMembersFromDb();
+          _this.$bvToast.toast(this.responseText, {
+            title: "DataBase Message",
+            autoHideDelay: 2000,
+          });
+        } else if (this.readyState === 4) {
+          alert(this.responseText);
+        }
+      };
+      try {
+        http.send(
+          JSON.stringify({
+            institution_id: this.instId,
+            phone_num: this.modalItem.phone_num,
+            email: this.modalItem.email,
+            first_name: this.modalItem.first_name,
+            last_name: this.modalItem.last_name,
+          })
+        );
+      } catch (e) {
+        alert(e);
+      }
+    },
+    deleteMemberInDb(memberID) {
+      var _this = this;
+      const http = new XMLHttpRequest();
+      const query = config.API_LOCATION + "member/" + memberID;
       // console.log(`Tags: update Tags query -  ${query}`);
       http.open("DELETE", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);
@@ -286,40 +361,68 @@ export default {
         alert(e);
       }
     },
-    importTagsToDb() {
+    // RegCode requests
+    getRegCodeByMemberIDFromDb(memberID) {
       var _this = this;
-      const queryParams = { instID: this.instId };
-      const queryArgs = queryString.stringify(queryParams);
-      const query = config.API_LOCATION + "import/tags?" + queryArgs;
-      console.log(`Tags: import Tags query -  ${query}`);
-      var formData = new FormData();
-      formData.append('file', this.tagCSVFile)
-
       const http = new XMLHttpRequest();
-      http.open("POST", query, true);
-      // http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      const queryParams = { memberID: memberID };
+      const queryArgs = queryString.stringify(queryParams);
+      const query = config.API_LOCATION + "reg-code?" + queryArgs;
+      console.log(`getRegCode Query - ${memberID}`)
+      console.log(`getRegCode Query - ${JSON.stringify(queryParams)}`)
+      http.open("GET", query, true);
+      http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);
-          console.log("import succeed!");
-          _this.getTagsFromDb();
-          _this.$bvToast.toast(this.responseText, {
-            title: "DataBase Message",
-            autoHideDelay: 2000,
-          });
+          console.log("get regcode succeed!");
+          _this.currentRegCode = JSON.parse(this.responseText).data;
         } else if (this.readyState === 4) {
           alert(this.responseText);
         }
       };
       try {
-        http.send(formData);
+        http.send();
       } catch (e) {
         alert(e);
       }
     },
-    getNewTagModalItem() {
+    sendRegCodeWithSMS() {
+      var _this = this;
+      const http = new XMLHttpRequest();
+      const requestBody = {
+        id: this.currentRegCode._id,
+        phone_num: this.regCodePhoneNum,
+        first_name: this.currentMember.first_name,
+      };
+      const query = config.API_LOCATION + "reg-code/sms";
+      http.open("POST", query, true);
+      http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
+      http.onreadystatechange = function () {
+        if (this.readyState === 4 && this.status === 200) {
+          var response = JSON.parse(this.responseText);
+          _this.getMembersFromDb();
+          console.log("send regcode with SMS succeed!");
+          if (response.message != undefined) {
+            _this.$bvToast.toast(response.message, {
+              title: "DataBase Message",
+              autoHideDelay: 2000,
+            });
+          }
+        } else if (this.readyState === 4) {
+          alert(this.responseText);
+        }
+      };
+      try {
+        http.send(JSON.stringify(requestBody));
+      } catch (e) {
+        alert(e);
+      }
+    },
+    getNewMemberModalItem() {
       return {
-        tag_string: "",
         first_name: "",
         last_name: "",
         group: "",

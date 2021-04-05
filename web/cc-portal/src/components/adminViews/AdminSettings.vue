@@ -25,7 +25,7 @@
   </b-container>
 </template>
 <script>
-import config from "../config";
+import config from "../../config";
 const moment = require("moment");
 const queryString = require("query-string");
 export default {
@@ -33,6 +33,7 @@ export default {
   data() {
     return {
       institution: null,
+      loggedInToken: "",
     };
   },
   computed: {
@@ -57,6 +58,7 @@ export default {
   },
   mounted() {
     var institution = this.$store.state.institution;
+    this.loggedInToken = this.$store.state.loggedInToken
     if (institution != null) {
       console.log(
         `Admub Settings mounted!, institution - ${JSON.stringify(institution)}`
@@ -115,6 +117,7 @@ export default {
         config.API_LOCATION + "export/" + recordType + "?" + queryArgs;
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // console.log(`downloaded content: ${this.responseText}`);

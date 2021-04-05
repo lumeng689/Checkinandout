@@ -81,6 +81,7 @@ export default {
       time: "",
       loggedInMember: null,
       loggedInFamily: null,
+      loggedInToken: "",
       ccRecords: [],
       qrcode: null,
       modalTitle: "",
@@ -150,6 +151,7 @@ export default {
     this.institution = this.$store.state.institution;
     this.loggedInMember = this.$store.state.loggedInMember;
     this.loggedInFamily = this.$store.state.loggedInFamily;
+    this.loggedInToken = this.$store.state.loggedInToken;
     if (this.loggedInFamily === null) {
       // do something when family info is not available
       this.$router.push("/mobile/login");
@@ -290,6 +292,7 @@ export default {
       const query = config.API_LOCATION + "cc-record/sync";
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);
@@ -329,6 +332,7 @@ export default {
       const query = config.API_LOCATION + "cc-record/schedule";
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);

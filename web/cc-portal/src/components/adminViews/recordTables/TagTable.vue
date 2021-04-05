@@ -56,7 +56,7 @@
   </div>
 </template>
 <script>
-import config from "../../config";
+import config from "../../../config";
 const queryString = require("query-string");
 const moment = require("moment");
 const DATE_FORMAT_DISP = "MM/DD/YYYY";
@@ -70,6 +70,7 @@ export default {
     var tModalItem = this.getNewTagModalItem();
     return {
       institution: null,
+      loggedInToken: "",
       currentPage: 1,
       perPage: 20,
       items: [],
@@ -126,6 +127,7 @@ export default {
   },
   created() {
     this.institution = this.$store.state.institution;
+    this.loggedInToken = this.$store.state.loggedInToken
   },
   methods: {
     mapCCRecordToItem(ccRecord) {
@@ -234,6 +236,7 @@ export default {
       const query = config.API_LOCATION + "tag?" + queryArgs;
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // console.log(this.responseText)

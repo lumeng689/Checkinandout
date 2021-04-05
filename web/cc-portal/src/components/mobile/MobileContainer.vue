@@ -63,6 +63,7 @@ export default {
       console.log(`onSignOut`);
       this.$store.commit("resetLoggedInFamily");
       this.$store.commit("resetLoggedInMember");
+      this.$store.commit("resetLoggedInToken")
       this.$store.commit("resetInstitution");
       this.$router.push("/mobile/login");
     },

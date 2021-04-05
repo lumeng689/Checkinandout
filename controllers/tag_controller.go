@@ -44,39 +44,39 @@ func (s *CCServer) GetManyTags(c *gin.Context) {
 }
 
 // GetTag - as is
-// func (s *CCServer) GetTag(c *gin.Context) {
-// 	var queryParams svc.GetTagParams
-// 	queryParams.TagString = c.DefaultQuery("tagString", "")
+func (s *CCServer) GetTag(c *gin.Context) {
+	var queryParams svc.GetTagParams
+	queryParams.TagString = c.DefaultQuery("tagString", "")
 
-// 	tag := svc.Tag{}
-// 	params := svc.GetTagParams{
-// 		TagString: queryParams.TagString,
-// 	}
+	tag := svc.Tag{}
+	params := svc.GetTagParams{
+		TagString: queryParams.TagString,
+	}
 
-// 	err := svc.GetTag(&params).Decode(&tag)
+	err := svc.GetTag(&params).Decode(&tag)
 
-// 	if err != nil {
-// 		// When no institution found, return failed
-// 		if err == mongo.ErrNoDocuments {
-// 			c.JSON(http.StatusForbidden, gin.H{
-// 				"message": "Tag not found by TagString, Get Tag Failed",
-// 			})
-// 			return
-// 		}
-// 		log.Printf("Error while finding Tag - %v\n", err)
-// 		c.JSON(http.StatusInternalServerError, gin.H{
-// 			"message": "Something went wrong",
-// 		})
-// 		return
-// 	}
+	if err != nil {
+		// When no institution found, return failed
+		if err == mongo.ErrNoDocuments {
+			c.JSON(http.StatusForbidden, gin.H{
+				"message": "Tag not found by TagString, Get Tag Failed",
+			})
+			return
+		}
+		log.Printf("Error while finding Tag - %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"message": "Something went wrong",
+		})
+		return
+	}
 
-// 	c.JSON(http.StatusOK, gin.H{
-// 		"message": "All Tags",
-// 		"data":    tag,
-// 	})
+	c.JSON(http.StatusOK, gin.H{
+		"message": "All Tags",
+		"data":    tag,
+	})
 
-// 	return
-// }
+	return
+}
 
 // CreateTag - as is
 func (s *CCServer) CreateTag(c *gin.Context) {

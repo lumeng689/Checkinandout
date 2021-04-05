@@ -19,6 +19,12 @@ type MemberLoginRespose struct {
 	Family *svc.Family `json:"family"`
 }
 
+// MemberRegistrationResponse - as is
+type MemberRegistrationResponse struct {
+	MemberID string `json:"member_id"`
+	RegCode  string `json:"reg_code"`
+}
+
 // GetManyMembers - as is
 func (s *CCServer) GetManyMembers(c *gin.Context) {
 
@@ -173,6 +179,7 @@ func (s *CCServer) ActivateMember(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status":  http.StatusOK,
 		"message": "Member Activated Successfully",
+		"token":   s.Config.DebugTokenL.Mobile,
 	})
 	return
 }
@@ -260,12 +267,85 @@ func (s *CCServer) LoginMember(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"message": "Member Login Succeed",
 		"data":    mLoginResponse,
+		"token":   s.Config.DebugTokenL.Mobile,
 	})
 	return
 }
 
 func (s *CCServer) CreateMemberAndSendSMS(c *gin.Context) {
+	var mRegForm svc.MemberRegForm
+	c.BindJSON(&mRegForm)
 
+	// Validation
+	err := s.Validator.v.Struct(mRegForm)
+	if err != nil {
+		var badInput bool = false
+		for _, e := range err.(validator.ValidationErrors) {
+			badInput = true
+			log.Println(e)
+			c.JSON(http.StatusBadRequest, gin.H{
+				"message": fmt.Sprint(e.Translate(*s.Validator.trans)),
+				"success": false,
+			})
+		}
+		if badInput {
+			return
+		}
+	}
+
+	// Check if the phone number exists
+	count, err := svc.CountMembersByPhoneNum(mRegForm.PhoneNum)
+	if err != nil {
+		log.Printf("Error while finding Member by PhoneNum - %v\n", err)
+	}
+	if count > 0 {
+		c.JSON(http.StatusForbidden, gin.H{
+			"message": "Phone # has been used! You can activate using the Registration Code in SMS",
+			"success": false,
+		})
+		return
+	}
+
+	// Create Member in DB
+	memberID, ok := handleCreateMember(c, &mRegForm)
+	if !ok {
+		return
+	}
+
+	// Get RegCode
+	regCode := svc.RegCode{}
+	err = svc.GetRegCodeByMemberID(memberID).Decode(&regCode)
+	if err != nil {
+		log.Printf("Error while getting regcode by ID - %v\n", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"status":  http.StatusInternalServerError,
+			"message": "Something went wrong",
+			"success": false,
+		})
+		return
+	}
+
+	// Send SMS
+	smsContent := RegCodeSMSContent{
+		Name:    mRegForm.FirstName,
+		RegCode: regCode.RegCode,
+	}
+
+	s.handleSendRegCodeWithSMS(smsContent, mRegForm.PhoneNum)
+
+	// return MemberID and RegCode
+	mRegResponse := MemberRegistrationResponse{
+		MemberID: memberID,
+		RegCode:  regCode.RegCode,
+	}
+
+	log.Println("SMS Sent!")
+	c.JSON(http.StatusOK, gin.H{
+		"data":    mRegResponse,
+		"message": "SMS Sent!",
+		"success": true,
+	})
+	s.sendRegCodePostProcessing(c, mRegForm.PhoneNum)
 }
 
 // UpdateMemberByID - as is
@@ -372,7 +452,7 @@ func handleCreateMember(c *gin.Context, mRegForm *svc.MemberRegForm) (string, bo
 
 	// Register RegCode for the Guardian in DB
 	// TODO - update func name
-	_, err = svc.CreateRegCodeByMemberID(memberID)
+	res, err = svc.CreateRegCodeByMemberID(memberID)
 	if err != nil {
 		log.Printf("Error while Creating new RegCode into DB - %v\n", err)
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -380,5 +460,6 @@ func handleCreateMember(c *gin.Context, mRegForm *svc.MemberRegForm) (string, bo
 		})
 		return "", false
 	}
+
 	return memberID, true
 }

@@ -19,9 +19,9 @@ func (s *CCServer) Routes(router *gin.Engine) {
 	// Check-Me MobileApp APIs
 	mobileTokenNeeded.POST("api/cc-record/sync", s.GetOrCreateManyCCRecords)
 	mobileTokenNeeded.POST("api/cc-record/schedule", s.HandleCheckoutScheduleEvent)
-	mobileTokenNeeded.POST("api/member/login", s.LoginMember)
-	mobileTokenNeeded.POST("api/member/activate", s.ActivateMember)
-	mobileTokenNeeded.POST("api/member/register-and-sms", s.CreateMemberAndSendSMS)
+	authNotNeeded.POST("api/member/login", s.LoginMember)
+	authNotNeeded.POST("api/member/activate", s.ActivateMember)
+	authNotNeeded.POST("api/member/register-and-sms", s.CreateMemberAndSendSMS)
 
 	// Gatekeeper APIs
 	authNotNeeded.POST("api/cc-record/scan", s.HandleCCScanEvent)
@@ -31,7 +31,7 @@ func (s *CCServer) Routes(router *gin.Engine) {
 
 	// Institution APIs
 	superAdminTokenNeeded.GET("api/institutions", s.GetManyInsts)
-	superAdminTokenNeeded.GET("api/institution/:id", s.GetInstByID)
+	authNotNeeded.GET("api/institution/:id", s.GetInstByID)
 	superAdminTokenNeeded.POST("api/institution", s.CreateInst)
 	superAdminTokenNeeded.PUT("api/institution/:id", s.UpdateInstByID)
 	superAdminTokenNeeded.DELETE("api/institution/:id", s.DeleteInstByID)
@@ -42,7 +42,7 @@ func (s *CCServer) Routes(router *gin.Engine) {
 	superAdminTokenNeeded.PUT("api/admin/:id", s.UpdateAdminByID)
 	superAdminTokenNeeded.DELETE("api/admin/:id", s.DeleteAdminByID)
 	adminTokenNeeded.GET("api/admin", s.GetAdminByFrasUsername)
-	adminTokenNeeded.POST("api/admin/login", s.AdminLogin)
+	authNotNeeded.POST("api/admin/login", s.AdminLogin)
 
 	// CC-Records APIs
 	adminTokenNeeded.GET("api/cc-records", s.GetManyCCRecords)
@@ -50,7 +50,7 @@ func (s *CCServer) Routes(router *gin.Engine) {
 
 	// Tag APIs
 	adminTokenNeeded.GET("api/tags", s.GetManyTags)
-	// adminAuthNeeded.GET("api/tag", s.GetTag)
+	adminTokenNeeded.GET("api/tag", s.GetTag)
 	adminTokenNeeded.POST("api/tag", s.CreateTag)
 	adminTokenNeeded.PUT("api/tag/:id", s.UpdateTagByID)
 	adminTokenNeeded.DELETE("api/tag/:id", s.DeleteTagByID)
@@ -80,14 +80,14 @@ func (s *CCServer) Routes(router *gin.Engine) {
 	adminTokenNeeded.DELETE("api/vehicle/:id", s.DeleteVehicleByID)
 
 	// RegCode APIs
-	adminTokenNeeded.GET("api/reg-codes", s.GetManyRegCodes)
+	superAdminTokenNeeded.GET("api/reg-codes", s.GetManyRegCodes)
 	adminTokenNeeded.GET("api/reg-code", s.GetRegCodeByMemberID)
 	adminTokenNeeded.POST("api/reg-code/email", s.SendRegCodeWithEmail)
 	adminTokenNeeded.POST("api/reg-code/sms", s.SendRegCodeWithSMS)
 
 	// Survey APIs
 	adminTokenNeeded.GET("api/surveys", s.GetManySurveys)
-	adminTokenNeeded.POST("api/survey", s.CreateSurvey)
+	authNotNeeded.POST("api/survey", s.CreateSurvey)
 
 	// Export APIs
 	adminTokenNeeded.GET("api/export/cc-records", s.ExportManyCCRecords)

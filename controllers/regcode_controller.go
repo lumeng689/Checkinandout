@@ -120,7 +120,7 @@ func (s *CCServer) SendRegCodeWithEmail(c *gin.Context) {
 		"message": "Email Sent!",
 	})
 
-	s.sendRegCodePostProcessing(c, sendRegCodeForm)
+	s.sendRegCodePostProcessing(c, sendRegCodeForm.PhoneNum)
 }
 
 // SendRegCodeWithSMS - as is
@@ -154,7 +154,7 @@ func (s *CCServer) SendRegCodeWithSMS(c *gin.Context) {
 		"message": "SMS Sent!",
 	})
 
-	s.sendRegCodePostProcessing(c, sendRegCodeForm)
+	s.sendRegCodePostProcessing(c, sendRegCodeForm.PhoneNum)
 }
 
 // SendRegCodeWithEmail - as is
@@ -201,10 +201,10 @@ func (s *CCServer) handleSendRegCodeWithSMS(sc RegCodeSMSContent, toPhoneNum str
 	twilio.SendSMS(smsConfig.FromPhoneNum, toPhoneNum, message, "", "")
 }
 
-func (s *CCServer) sendRegCodePostProcessing(c *gin.Context, sendRegCodeForm SendRegCodeForm) {
+func (s *CCServer) sendRegCodePostProcessing(c *gin.Context, phoneNum string) {
 	// Update Member Status
 	// Get Member
-	err := svc.SetMemberRegCodeSentByPhoneNum(sendRegCodeForm.PhoneNum)
+	err := svc.SetMemberRegCodeSentByPhoneNum(phoneNum)
 	if err != nil {
 		// When no member found, return failed
 		if err == mongo.ErrNoDocuments {

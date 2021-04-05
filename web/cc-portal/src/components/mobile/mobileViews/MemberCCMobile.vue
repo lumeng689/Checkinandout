@@ -54,6 +54,7 @@ export default {
       time: "",
       // loggedInMemberID: "",
       loggedInMember: null,
+      loggedInToken: "",
       ccRecord: null,
       qrcode: null,
       modalTitle: "",
@@ -72,6 +73,7 @@ export default {
     // Load Member
     this.institution = this.$store.state.institution;
     this.loggedInMember = this.$store.state.loggedInMember;
+    this.loggedInToken = this.$store.state.loggedInToken;
     console.log(
       // `Mobile mounted - loggedInMemberID: ${this.loggedInMemberID}`
       `Mobile mounted - loggedInMemberID: ${JSON.stringify(
@@ -188,6 +190,7 @@ export default {
       const query = config.API_LOCATION + "cc-record/sync";
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);

@@ -27,7 +27,7 @@
       </b-col>
       <b-col xl="5" lg="12" class="my-1" align-self="end">
         <b-row align-h="end">
-          <b-button class="mr-2 mb-2" variant="info" :disabled="disableSingleAction" @click="onViewFamily">View Family</b-button>
+          <!-- <b-button class="mr-2 mb-2" variant="info" :disabled="disableSingleAction" @click="onViewFamily">View Family</b-button> -->
           <b-button v-if="false" class="mr-2 mb-2" variant="primary" :disabled="disableManyAction || disableCheckout" @click="onCheckOutEvents">CheckOut</b-button>
           <b-button class="mr-2 mb-2" variant="danger" :disabled="disableManyAction" @click="onDeleteEvents">Delete</b-button>
           <b-button class="mr-2 mb-2" variant="outline-secondary" :disabled="disableManyAction" @click="onClearSelect">Clear Select</b-button>
@@ -54,20 +54,21 @@
     <b-pagination v-model="currentPage" :total-rows="numRows" :per-page="perPage" aria-controls="cc-record-table"></b-pagination>
   </div>
 </template>
-
 <script>
-import config from "../../config";
-const queryString = require("query-string");
+// import config from "../../../config";
+// const queryString = require("query-string");
 const moment = require("moment");
 const DATE_FORMAT_DISP = "MM/DD/YYYY";
 // const DATE_FORMAT = "YYYY-MM-DD";
 const TIME_FORMAT = "hh:mm A";
 export default {
-  name: "family-table",
-  props: { ccRecords: Array },
+  name: "member-table",
+  // template: "tag-corporate-table-template",
+  props: { ccRecords: Array, instType: String },
   data() {
     return {
       institution: null,
+      loggedInToken: "",
       currentPage: 1,
       perPage: 20,
       items: [],
@@ -82,24 +83,22 @@ export default {
   },
   computed: {
     fields() {
+      var memberAlias = this.instType === "hospital" ? "patient" : "employee";
       if (this.institution != null && this.institution.workflow_type === "cc") {
         return [
           "date",
-          "student_name",
+          memberAlias,
           "group",
-          "guardian_name",
           "temperature",
           "phone_number",
-          "drop_off",
-          "scheduled_pickup",
-          "actual_pickup",
+          "check_in",
+          "check_out",
         ];
       }
       return [
         "time",
-        "student_name",
+        memberAlias,
         "group",
-        "guardian_name",
         "temperature",
         "phone_number",
       ];
@@ -122,88 +121,83 @@ export default {
   },
   created() {
     this.institution = this.$store.state.institution;
+    this.loggedInToken = this.$store.state.loggedInToken
   },
   methods: {
     mapCCRecordToItem(ccRecord) {
-      if (ccRecord.gw === null) {
-        return {
+      // map CCRecord to item
+      var item;
+      if (ccRecord.mt === null) {
+        item = {
           _id: ccRecord._id,
-          self: ccRecord,
-          date: "",
-          time: "",
-          has_expired: "",
-          student_name: "",
-          group: "",
-          guardian_name: "",
-          temperature: "",
-          phone_number: "",
-          drop_off: "",
-          scheduled_pickup: "",
-          actual_pickup: "",
+          // date: "",
+          // time: "",
+          has_expired: ccRecord.has_expired,
+          // group: "",
+          temperature: ccRecord.temperature.toFix,
+          // phone_number: "",
+          // check_in: "",
+          // check_out: "",
         };
+        if (this.instType === "hospital") {
+          item.patient = "";
+        } else {
+          item.employee = "";
+        }
+        return item;
       }
-      var checkInTime = moment(ccRecord.gw.check_in_event.time);
-      var scheduleTime = moment(ccRecord.check_out_scheduled_at);
-      var checkOutTime = moment(ccRecord.gw.check_out_event.time);
+      var checkInTime = moment(ccRecord.mt.check_in_event.time);
+      var checkOutTime = moment(ccRecord.mt.check_out_event.time);
       var checkInDisplay = checkInTime.isBefore("1970-01-01")
         ? ""
         : checkInTime.format(TIME_FORMAT);
-      var scheduleDisplay = scheduleTime.isBefore("1970-01-01")
-        ? ""
-        : scheduleTime.format(TIME_FORMAT);
       var checkOutDisplay = checkOutTime.isBefore("1970-01-01")
         ? ""
         : checkOutTime.format(TIME_FORMAT);
-      var row = {
+      item = {
         _id: ccRecord._id,
-        self: ccRecord,
         date: checkInTime.format(DATE_FORMAT_DISP),
-        time: checkInTime.format(DATE_FORMAT_DISP) + checkInDisplay,
+        time: checkInTime.format(DATE_FORMAT_DISP) + " " + checkInDisplay,
         has_expired: ccRecord.has_expired,
-        student_name: ccRecord.gw.ward_info.name,
-        group: ccRecord.gw.ward_info.group,
-        guardian_name: ccRecord.gw.check_in_event.guardian_info.name,
+        group: ccRecord.mt.info.group,
         temperature: ccRecord.temperature.toFixed(1),
-        phone_number: ccRecord.gw.check_in_event.guardian_info.phone_num,
-        drop_off: checkInDisplay,
-        scheduled_pickup: scheduleDisplay,
-        actual_pickup: checkOutDisplay,
+        phone_number: ccRecord.mt.info.phone_num,
+        check_in: checkInDisplay,
+        check_out: checkOutDisplay,
       };
-      if (row.temperature > parseFloat(this.tempThrdFilter)) {
-        row._rowVariant = 'danger'
+      if (this.instType === "hospital") {
+        item.patient = ccRecord.mt.info.name;
+      } else {
+        item.employee = ccRecord.mt.info.name;
       }
-      return row;
+      if (item.temperature > parseFloat(this.tempThrdFilter)) {
+        item._rowVariant = 'danger'
+      }
+      return item;
     },
     onRowSelected(items) {
       // handle "undefined" error when clicking the same item multiple times
       if (items[0] === undefined) return;
       this.selectedItems = items;
     },
-
-    onViewFamily() {
-      var _this = this;
-      var wardID = this.selectedItems[0].self.gw.ward_info.id
-      this.getFamilyWithMemberByWardID(wardID, (familyWithMembers) => {
-        _this.$store.commit("setLoadedFamilyWithMembers", familyWithMembers)
-        _this.$router.push("/portal/families/info");
-      })
+    // Button Handlers
+    onCheckOutEvents() {},
+    onDeleteEvents() {
+      // TODO
+      // for (const item of this.selectedItems) {
+      //   this.deleteCCRecordFromDb(item);
+      // }
+      // this.getCCRecordsFromDb(null);
     },
-
-    onCheckOutEventes() {},
-
-    onDeleteEvents() {},
-
     onClearSelect() {
       this.selectedItems = [];
       this.$refs.ccRecordTable.clearSelected();
     },
-
     onFiltered(filteredItems) {
       this.totalRows = filteredItems.length;
       this.currentPage = 1;
       this.onClearSelect();
     },
-
     filterFunction(row) {
       // console.log(`row: ${JSON.stringify(row)}, filterString: ${filterString}`)
       var expiredPred = false;
@@ -219,42 +213,12 @@ export default {
       }
       var groupPred = true;
       if (this.groupFilter.length > 0) {
-        groupPred = row.group.toLowerCase().includes(this.groupFilter);
+        groupPred = row.group.toLowerCase().includes(this.wardGroupFilter);
       }
       // console.log(
       //   `expiredPred: ${expiredPred}, tempPred: ${tempPred}, groupPred: ${groupPred}, `
       // );
       return !expiredPred && tempPred && groupPred;
-    },
-    getFamilyWithMemberByWardID(wardID, callback) {
-      
-      const queryParams = {wardID: wardID };
-      const queryArgs = queryString.stringify(queryParams)
-
-      const http = new XMLHttpRequest()
-      const query = config.API_LOCATION + "family-with-members?" + queryArgs;
-      console.log(`getFamilyWithMemberByAWardID - query: ${query}`)
-      http.open("GET", query, true);
-      http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-      http.onreadystatechange = function () {
-        if (this.readyState === 4 && this.status === 200) {
-          // console.log(this.responseText)
-          if (this.responseText.length == 0) {
-            return;
-          }
-          var response = JSON.parse(this.responseText).data;
-          if (response && callback != null) {
-            callback(response);
-          }
-        } else if (this.readyState === 4) {
-          alert(this.responseText);
-        }
-      };
-      try {
-        http.send();
-      } catch (e) {
-        alert(e);
-      }
     },
   },
   watch: {
@@ -268,4 +232,8 @@ export default {
     },
   },
 };
+
+// module.exports = {
+//   TagCorporateTable
+// }
 </script>

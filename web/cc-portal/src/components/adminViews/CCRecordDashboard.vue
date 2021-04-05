@@ -46,7 +46,7 @@
 </template>
 <script>
 // import TagCorporateTable from "./recordTables/TagCorporateTable";
-import config from "../config";
+import config from "../../config";
 import FamilyTable from "./recordTables/FamilyTable";
 import MemberTable from "./recordTables/MemberTable";
 import TagTable from "./recordTables/TagTable";
@@ -65,6 +65,7 @@ export default {
   data() {
     return {
       institution: null,
+      loggedInToken: "",
       ccRecords: [],
       startDate: "",
       endDate: "",
@@ -85,6 +86,7 @@ export default {
       );
       this.institution = institution;
     }
+    this.loggedInToken = this.$store.state.loggedInToken
     var _this = this;
     this.getCCRecordsFromDb((items) => {
       _this.showAlert();
@@ -155,6 +157,7 @@ export default {
       console.log(`CC-Records: getCCRecord query -  ${query}`);
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // console.log(this.responseText);
@@ -185,6 +188,7 @@ export default {
       http.open("DELETE", query, true);
 
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // console.log(this.responseText);

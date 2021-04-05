@@ -58,6 +58,7 @@ func postCCSync(t *testing.T, syncRequest svc.CCSyncPostingForm) {
 
 	syncRequestString, _ := json.Marshal(syncRequest)
 	req, _ := http.NewRequest("POST", "/api/cc-record/sync", strings.NewReader(string(syncRequestString)))
+	req.Header.Add("Authorization", "Bearer "+testCCServer.Config.DebugTokenL.Mobile)
 	w := httptest.NewRecorder()
 	testRouter.ServeHTTP(w, req)
 

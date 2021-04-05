@@ -137,6 +137,7 @@ func (s *CCServer) AdminLogin(c *gin.Context) {
 		"message": "Login Succeed",
 		"success": true,
 		"data":    admin,
+		"token":   s.Config.DebugTokenL.Admin,
 	})
 	return
 }

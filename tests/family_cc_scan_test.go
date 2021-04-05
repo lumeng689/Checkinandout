@@ -10,7 +10,6 @@ import (
 	"testing"
 	"time"
 
-	"cloudminds.com/harix/cc-server/controllers"
 	svc "cloudminds.com/harix/cc-server/services"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -53,7 +52,7 @@ var familyFormFamilyTest = svc.FamilyRegForm{
 	Wards: []svc.WardForm{w1, w2},
 }
 
-func initTestFamilyCC(t *testing.T, s controllers.CCServer) {
+func initTestFamilyCC(t *testing.T) {
 	// Create Institution for Tag-CC Test
 	instToCreate := instFormFamilyTest
 	iRes, err := svc.CreateInst(instToCreate)
@@ -112,7 +111,7 @@ func TestFamilyCCScan(t *testing.T) {
 	var inst svc.Institution
 	if err := svc.GetInstByName(instName).Decode(&inst); err != nil {
 		if err == mongo.ErrNoDocuments {
-			initTestFamilyCC(t, testCCServer)
+			initTestFamilyCC(t)
 			svc.GetInstByName(instName).Decode(&inst)
 		} else {
 			panic(err)
@@ -233,6 +232,7 @@ func postScheduleCheckOut(t *testing.T, scheduleRequest svc.SchedulePostingForm)
 
 	postRequestString, _ := json.Marshal(scheduleRequest)
 	req, _ := http.NewRequest("POST", "/api/cc-record/schedule", strings.NewReader(string(postRequestString)))
+	req.Header.Add("Authorization", "Bearer "+testCCServer.Config.DebugTokenL.Mobile)
 	w := httptest.NewRecorder()
 	testRouter.ServeHTTP(w, req)
 

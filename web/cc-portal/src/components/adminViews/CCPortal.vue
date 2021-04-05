@@ -2,7 +2,7 @@
   <div>
     <b-navbar sticky type="dark" variant="dark">
       <b-navbar-brand href="#">
-        <img class="mr-2" src="../assets/mAIRobotics Logo White Transparent-h30.png" alt />
+        <img class="mr-2" src="../../assets/mAIRobotics Logo White Transparent-h30.png" alt />
           Check Me! </b-navbar-brand>
       <b-navbar-nav class="ml-auto">
         <b-nav-item-dropdown right>
@@ -29,7 +29,7 @@
 </template>
 
 <script>
-import config from "../config";
+import config from "../../config";
 import FamilySchoolSidebar from "./sidebars/FamilySchoolSidebar.vue";
 import MemberCorporateSidebar from "./sidebars/MemberCorporateSidebar.vue";
 import MemberHospitalSidebar from "./sidebars/MemberHospitalSidebar.vue";
@@ -50,6 +50,7 @@ export default {
       activeUser: null,
       institution: null,
       activeUserLoaded: false,
+      loggedInToken: "",
     };
   },
 
@@ -96,6 +97,7 @@ export default {
     // If activeUser is already in storage, use it directly, rather than getting from DB
     this.activeUser = this.$store.state.activeUser;
     this.institution = this.$store.state.institution;
+    this.loggedInToken = this.$store.state.loggedInToken
     console.log(
       `CCPortal: created! - active user: ${JSON.stringify(this.activeUser)}`
     );
@@ -129,6 +131,7 @@ export default {
       const query = config.API_LOCATION + "admin?" + queryArgs;
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // console.log(this.responseText)

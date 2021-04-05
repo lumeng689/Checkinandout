@@ -108,7 +108,7 @@
 </template>
 
 <script>
-import config from "../../../config";
+import config from "../../../../config";
 export default {
   name: "AddFamily",
   data() {
@@ -116,6 +116,7 @@ export default {
       guardians: [this.getNewGuardian(1)],
       wards: [this.getNewWard(1)],
       vehicles: [this.getNewVehicle(1)],
+      loggedInToken: "",
     };
   },
   watch: {},
@@ -134,6 +135,9 @@ export default {
     //     gValidation[i].firstName = g.instId;
     //   }
     // }
+  },
+  created() {
+    this.loggedInToken = this.$store.state.loggedInToken;
   },
   methods: {
     onAddGuardian() {
@@ -168,6 +172,7 @@ export default {
       const query = config.API_LOCATION + "family";
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 201) {
           var response = JSON.parse(this.responseText);

@@ -6,7 +6,6 @@ import (
 	"testing"
 	"time"
 
-	"cloudminds.com/harix/cc-server/controllers"
 	svc "cloudminds.com/harix/cc-server/services"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -32,7 +31,7 @@ var tagFormTagTest = svc.TagRegForm{
 	PhoneNum:  "654-321-0987",
 }
 
-func initTestTagCC(s controllers.CCServer) {
+func initTestTagCC() {
 
 	// Create Institution for Tag-CC Test
 	instToCreate := instFormTagTest
@@ -61,7 +60,7 @@ func TestTagCCScan(t *testing.T) {
 
 	// Set-Up testing data if not already
 	if count, _ := svc.CountInstByName(instName); count == 0 {
-		initTestTagCC(testCCServer)
+		initTestTagCC()
 	}
 
 	var tagString string

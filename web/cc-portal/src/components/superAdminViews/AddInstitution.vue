@@ -50,8 +50,8 @@
 
 <script>
 import Vue from 'vue'
-import config from "../config";
-import common from "../common";
+import config from "../../config";
+import common from "../../common";
 export default Vue.extend({
   name: "AddInstitution",
   data() {
@@ -127,6 +127,7 @@ export default Vue.extend({
       const query = config.API_LOCATION + "institution";
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${config.SUPER_ADMIN_TOKEN}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 201) {
           var response = JSON.parse(this.responseText);

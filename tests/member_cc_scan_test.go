@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"cloudminds.com/harix/cc-server/controllers"
 	svc "cloudminds.com/harix/cc-server/services"
 	"github.com/stretchr/testify/assert"
 	"go.mongodb.org/mongo-driver/bson/primitive"
@@ -34,7 +33,7 @@ var memberFormMemberTest = svc.MemberRegForm{
 	PhoneNum:  "654-321-0987",
 }
 
-func initTestMemberCC(s controllers.CCServer) {
+func initTestMemberCC() {
 
 	// Create Institution for Tag-CC Test
 	instToCreate := instFormMemberTest
@@ -64,7 +63,7 @@ func TestMemberCCScan(t *testing.T) {
 	if err := svc.GetInstByName(instName).Decode(&inst); err != nil {
 		if err == mongo.ErrNoDocuments {
 			// Set-Up testing data if not already
-			initTestMemberCC(testCCServer)
+			initTestMemberCC()
 			svc.GetInstByName(instName).Decode(&inst)
 		} else {
 			panic(err)

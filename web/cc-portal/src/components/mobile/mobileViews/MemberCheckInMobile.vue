@@ -86,6 +86,7 @@ export default {
       // loggedInFamily: null,
       // loggedInMemberID: "",
       loggedInMember: null,
+      loggedInToken: "",
       ccRecord: null,
       qrcode: null,
       modalTitle: "",
@@ -118,6 +119,7 @@ export default {
     // this.loggedInMemberID = this.$store.state.loggedInMemberID;
     this.institution = this.$store.state.institution;
     this.loggedInMember = this.$store.state.loggedInMember;
+    this.loggedInToken = this.$store.state.loggedInToken;
     console.log(
       // `Mobile mounted - loggedInMemberID: ${this.loggedInMemberID}`
       `Mobile mounted - loggedInMemberID: ${JSON.stringify(
@@ -211,6 +213,7 @@ export default {
       console.log(`onSignOut`);
       this.$store.commit("resetLoggedInFamily");
       this.$store.commit("resetLoggedInMember");
+      this.$store.commit("resetLoggedInToken")
       this.$store.commit("resetInstitution");
       this.$router.push("/mobile/login");
     },
@@ -240,6 +243,7 @@ export default {
       const query = config.API_LOCATION + "cc-record/sync";
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function() {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);

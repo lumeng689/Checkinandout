@@ -1,23 +1,23 @@
-import CCPortal from "../components/CCPortal"
-import CCRecords from "../components/CCRecordDashboard";
-import TagDashboard from "../components/memberViews/TagDashboard"
-import MemberDashboard from "../components/memberViews/MemberDashboard"
-import FamilyDashboard from "../components/memberViews/FamilyViews/FamilyDashboard";
-import WardDashboard from "../components/memberViews/FamilyViews/WardDashboard";
-import AddFamily from "../components/memberViews/FamilyViews/AddFamily";
-import FamilyInfo from "../components/memberViews/FamilyViews/FamilyInfo";
-import Admins from "../components/Admins";
-import AdminProfile from "../components/AdminProfile"
-import AdminSettings from "../components/AdminSettings"
+import CCPortal from "../components//adminViews/CCPortal"
+import CCPortalLogin from "../components/adminViews/CCPortalLogin"
+import CCRecords from "../components/adminViews/CCRecordDashboard";
+import TagDashboard from "../components/adminViews/memberViews/TagDashboard"
+import MemberDashboard from "../components/adminViews/memberViews/MemberDashboard"
+import FamilyDashboard from "../components/adminViews/memberViews/FamilyViews/FamilyDashboard";
+import WardDashboard from "../components/adminViews/memberViews/FamilyViews/WardDashboard";
+import AddFamily from "../components/adminViews/memberViews/FamilyViews/AddFamily";
+import FamilyInfo from "../components/adminViews/memberViews/FamilyViews/FamilyInfo";
+import Admins from "../components/adminViews/Admins";
+import AdminProfile from "../components/adminViews/AdminProfile"
+import AdminSettings from "../components/adminViews/AdminSettings"
 import Mobile from "../components/mobile/Mobile"
 import MobileRegistration from "../components/mobile/MobileRegistration"
 import MobileLogin from "../components/mobile/MobileLogin"
 import MobileActivate from "../components/mobile/MobileActivate"
 import MobileContainer from "../components/mobile/MobileContainer"
-import AddInstitution from "../components/AddInstitution"
-import AddAdmin from "../components/AddAdmin"
-import RedirectCCPortal from "../components/RedirectCCPortal"
-import CCPortalLogin from "../components/CCPortalLogin"
+import AddInstitution from "../components/superAdminViews/AddInstitution"
+import AddAdmin from "../components/superAdminViews/AddAdmin"
+import RedirectCCPortal from "../components/superAdminViews/RedirectCCPortal"
 const routes = [
   {
     path: "/portal",
@@ -86,8 +86,9 @@ const routes = [
         component: MobileLogin,
       },
       {
-        path:"/mobile/registration",
+        path:"/mobile/registration/:instID",
         component: MobileRegistration,
+        props: true,
       }
       
     ]

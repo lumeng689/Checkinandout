@@ -14,7 +14,7 @@
   </b-container>
 </template>
 <script>
-import config from "../config";
+import config from "../../config";
 const queryString = require("query-string");
 const moment = require("moment");
 const DATETIME_FORMAT = "MMM DD YYYY hh:mm A";
@@ -23,6 +23,7 @@ export default {
   data() {
     return {
       instId: "",
+      loggedInToken: "",
       currentPage: 1,
       perPage: 20,
       admins: [],
@@ -33,6 +34,7 @@ export default {
   mounted() {
     // console.log("Wards Dashboard mounted")
     var activeUser = this.$store.state.activeUser;
+    this.loggedInToken = this.$store.state.loggedInToken
     if (activeUser != null) {
       console.log(
         `Admins Dashboard mounted!, instId - ${activeUser.institution_id}`
@@ -70,6 +72,7 @@ export default {
       console.log(`Admins: get Admin query -  ${query}`);
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // console.log(this.responseText);

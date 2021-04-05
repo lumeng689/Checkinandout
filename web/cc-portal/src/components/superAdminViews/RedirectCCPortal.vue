@@ -22,7 +22,7 @@
   </b-container>
 </template>
 <script>
-import config from "../config";
+import config from "../../config";
 const queryString = require("query-string");
 export default {
   name: "RedirectCCPortal",
@@ -64,10 +64,18 @@ export default {
     onRedirectToCCPortal() {
       // set config
       // config.FRAS_USERNAME = this.adminSelected.fras_username;
-      this.$store.commit("setInstitution", this.instSelected);
-      this.$store.commit("setActiveUser", this.adminSelected);
+      var _this = this
+      this.logInAdminByDb(
+        (response) => {
+          var admin = response.data
+          var token = response.token
+          _this.$store.commit("setInstitution", _this.instSelected);
+          _this.$store.commit("setActiveUser", admin);
+            _this.$store.commit("setLoggedInToken", token)
+            _this.$router.push("/portal/cc-records")
+        }
+      )
       // redirect
-      this.$router.push("/portal/cc-records");
     },
 
     getInstitutionsFromDb() {
@@ -76,6 +84,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${config.SUPER_ADMIN_TOKEN}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           var response = JSON.parse(this.responseText);
@@ -103,6 +112,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${config.SUPER_ADMIN_TOKEN}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           var response = JSON.parse(this.responseText);
@@ -118,6 +128,34 @@ export default {
       };
       try {
         http.send();
+      } catch (e) {
+        alert(e);
+      }
+    },
+    logInAdminByDb(callback) {
+      const query = config.API_LOCATION + "admin/login"
+      console.log(`logIn query: ${query}`)
+      const http = new XMLHttpRequest();
+      http.open("POST", query, true);
+      http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.onreadystatechange = function () {
+        var response = JSON.parse(this.responseText)
+        if (this.readyState === 4 && this.status === 200) {
+          if (this.responseText.length == 0) {
+            return;
+          }
+          if (response.data && callback != null) {
+            callback(response);
+          }
+        } else if (this.readyState === 4) {
+          alert(this.responseText);
+        }
+      };
+      try {
+        http.send(JSON.stringify({
+          fras_username: this.adminSelected.fras_username,
+          password: this.adminSelected.password,
+        }));
       } catch (e) {
         alert(e);
       }

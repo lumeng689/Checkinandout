@@ -112,11 +112,14 @@ export default {
         // On Success, set LoggedInMember and Login
         (response) => {
           // Determine if Family Mode should be used
-          console.log(`onMemberLogin response - ${response}`);
-          var member = response.member;
-          var family = response.family;
+          var responseData = response.data
+          var token = response.token
+          console.log(`onMemberLogin response - ${responseData}`);
+          var member = responseData.member;
+          var family = responseData.family;
           if (!member) return;
           _this.$store.commit("setLoggedInMember", member);
+          _this.$store.commit("setLoggedInToken", token)
           if (family) _this.$store.commit("setLoggedInFamily", family);
 
           //   _this.$store.commit("resetLoggedInFamily")
@@ -178,22 +181,22 @@ export default {
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
       http.onreadystatechange = function() {
         if (this.readyState === 4 && this.status === 200) {
-          var responseData = JSON.parse(this.responseText).data;
-          if (responseData && successCallback != null) {
-            successCallback(responseData);
+        var response = JSON.parse(this.responseText)
+          if (response.data && successCallback != null) {
+            successCallback(response);
             return;
           }
         } else if (this.readyState === 4) {
-          var response = JSON.parse(this.responseText);
-          if (response.message != undefined) {
+          var responseFailed = JSON.parse(this.responseText)
+          if (responseFailed.message != undefined) {
             if (
-              response.message.includes("Not Activated") &&
+              responseFailed.message.includes("Not Activated") &&
               needRegCallback != null
             ) {
               needRegCallback();
               return;
             }
-            alert(response.message);
+            alert(responseFailed.message);
             return;
           }
           alert(this.responseText);

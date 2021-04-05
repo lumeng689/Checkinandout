@@ -22,7 +22,7 @@
 </template>
 
 <script>
-import config from "../config";
+import config from "../../config";
 export default {
   name: "CCPortalLogin",
   data() {
@@ -40,10 +40,13 @@ export default {
       var _this = this;
       event.preventDefault();
       this.logInAdminByDb(
-        (admin) => {
+        (response) => {
+          var admin = response.data
+          var token = response.token
           _this.getInstitutionByIdFromDb(admin.institution_id, (inst) => {
-            this.$store.commit("setInstitution", inst)
-            this.$store.commit("setActiveUser", admin)
+            _this.$store.commit("setInstitution", inst)
+            _this.$store.commit("setActiveUser", admin)
+            _this.$store.commit("setLoggedInToken", token)
             _this.$router.push("/portal/cc-records")
           })
         }
@@ -56,13 +59,13 @@ export default {
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
       http.onreadystatechange = function () {
+        var response = JSON.parse(this.responseText)
         if (this.readyState === 4 && this.status === 200) {
           if (this.responseText.length == 0) {
             return;
           }
-          var responseData = JSON.parse(this.responseText).data;
-          if (responseData && callback != null) {
-            callback(responseData);
+          if (response.data && callback != null) {
+            callback(response);
           }
         } else if (this.readyState === 4) {
           alert(this.responseText);

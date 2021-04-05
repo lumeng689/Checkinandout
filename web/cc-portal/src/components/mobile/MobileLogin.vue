@@ -90,11 +90,14 @@ export default {
         // On Success, set LoggedInMember and Login
         (response) => {
           // Determine if Family Mode should be used
-          console.log(`onMemberLogin response - ${response}`);
-          var member = response.member;
-          var family = response.family;
+          var responseData = response.data
+          var token = response.token
+          console.log(`onMemberLogin response - ${responseData}`);
+          var member = responseData.member;
+          var family = responseData.family;
           if (!member) return;
           _this.$store.commit("setLoggedInMember", member);
+          _this.$store.commit("setLoggedInToken", token)
           if (family) _this.$store.commit("setLoggedInFamily", family);
 
           //   _this.$store.commit("resetLoggedInFamily")
@@ -116,14 +119,13 @@ export default {
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
       http.onreadystatechange = function() {
+        var response = JSON.parse(this.responseText)
         if (this.readyState === 4 && this.status === 200) {
-          var responseData = JSON.parse(this.responseText).data;
-          if (responseData && successCallback != null) {
-            successCallback(responseData);
+          if (response.data && successCallback != null) {
+            successCallback(response);
             return;
           }
         } else if (this.readyState === 4) {
-          var response = JSON.parse(this.responseText);
           if (response.message != undefined) {
             if (
               response.message.includes("Not Activated") &&
@@ -148,7 +150,6 @@ export default {
         alert(e);
       }
     },
-    setStatesInStorage() {},
     getInstitutionFromDb(instID, callback) {
       //// get active user in database
       const http = new XMLHttpRequest();

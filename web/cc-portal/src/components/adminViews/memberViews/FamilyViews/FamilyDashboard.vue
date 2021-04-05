@@ -54,13 +54,14 @@
   </b-container>
 </template>
 <script>
-import config from "../../../config";
+import config from "../../../../config";
 const queryString = require("query-string");
 export default {
   name: "FamilyDashboard",
   data() {
     return {
       instId: "",
+      loggedInToken: "",
       currentPage: 1,
       perPage: 20,
       fields: ["family_contact", "phone", "relation", "reg_code_sent"],
@@ -87,6 +88,7 @@ export default {
   },
   mounted() {
     var activeUser = this.$store.state.activeUser;
+    this.loggedInToken = this.$store.state.loggedInToken;
     if (activeUser != null) {
       console.log(
         `Family Dashboard mounted!, instId - ${activeUser.institution_id}`
@@ -167,6 +169,7 @@ export default {
       console.log(`CC-Families: getFamilies query -  ${query}`);
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // console.log(this.responseText);
@@ -196,6 +199,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // console.log(this.responseText)
@@ -222,6 +226,7 @@ export default {
       const http = new XMLHttpRequest();
       http.open("DELETE", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+      http.setRequestHeader("Authorization", `Bearer ${this.loggedInToken}`);
       http.onreadystatechange = function () {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);

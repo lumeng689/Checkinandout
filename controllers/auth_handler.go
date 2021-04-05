@@ -17,9 +17,11 @@ func (s *CCServer) tokenAuth(expectedToken string) gin.HandlerFunc {
 			return
 		}
 		token := authHeaderFields[1]
-		if token == expectedToken {
+		// log.Printf("token - %v\n", token)
+		if token != expectedToken {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
+
 	}
 }

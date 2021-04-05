@@ -27,6 +27,9 @@ const store = new Vuex.Store({
   state: {
     activeUser: null,
     institution: null,
+    loggedInToken: "",
+
+    // mobile-only entities
     loggedInFamily: null,
     loggedInMember: null,
     loadedFamilyWithMembers: null,
@@ -40,6 +43,10 @@ const store = new Vuex.Store({
     setInstitution (state, i) {
       console.log(`setInstitution - ${JSON.stringify(i)}`)
       state.institution = i
+    },
+    setLoggedInToken (state, t) {
+      console.log(`setLoggedInToken - ${JSON.stringify(t)}`)
+      state.loggedInToken = t
     },
     setLoadedFamilyWithMembers (state, f) {
       console.log(`setLoadedFamily - ${JSON.stringify(f)}`)
@@ -60,6 +67,10 @@ const store = new Vuex.Store({
     resetInstitution(state) {
       console.log('institution reset to null')
       state.institution = null
+    },
+    resetLoggedInToken(state){
+      console.log('loggedInToken reset to empty')
+      state.loggedInToken = ""
     },
     resetLoadedFamilyWithMembers (state) {
       console.log('loadedFamily reset to null')
