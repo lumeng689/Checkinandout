@@ -1,31 +1,63 @@
 <template>
-  <b-container>
-    <b-row class="ml-2">
-      <h4>Welcome {{loggedInGuardianName}}</h4>
-    </b-row>
-    <b-row class="ml-4 mr-4" align-h="between">
-      <b-col lg="3" cols="5">
-        <b-row>{{ date }}</b-row>
-        <b-row>{{ time }}</b-row>
-      </b-col>
-      <b-col lg="2" cols="3">
-        <b-button variant="success" @click="onSync">Sync</b-button>
-      </b-col>
-    </b-row>
-
-    <b-row style="margin-top: 80px;">
-      <b-col cols="12">
-        <b-row class="mb-2" align-h="around">
-          <b-button variant="info" @click="onCheckIn">Check In</b-button>
-        </b-row>
-      </b-col>
-    </b-row>
-    <b-modal static hide-footer ref="cc-modal" :title="modalTitle + ' QRCode'" @hidden="onModalHidden">
+  <div id="wrap">
+    <div class="activate-head">
+      <div class="activate-logo">
+        <img
+          class="header-image"
+          src="../../../assets/mAIRobotics_Logo_300px.png"
+        />
+      </div>
+      <div class="person-welcome">
+        <p class="person-welcome-text">Hello, {{ loggedInGuardianName }}</p>
+      </div>
+    </div>
+    <div class="profile">
+      <div class="person-photo">
+        <b-avatar size="7em"></b-avatar>
+      </div>
+      <div class="info">
+        <p class="info-text">Welcome Back</p>
+        <p class="info-date">{{ date }}</p>
+      </div>
+    </div>
+    <div class="button-div">
+      <div class="checkin-button-div">
+        <b-button
+          class="checkin-button"
+          pill
+          block
+          variant="outline-dark"
+          size="lg"
+          @click="onCheckIn"
+        >
+          Check In
+        </b-button>
+      </div>
+      <div class="signout-button-div">
+        <b-button
+          class="signout-button"
+          pill
+          block
+          variant="dark"
+          size="lg"
+          @click="onSignOut"
+        >
+          Sign Out
+        </b-button>
+      </div>
+    </div>
+    <b-modal
+      static
+      hide-footer
+      ref="cc-modal"
+      :title="modalTitle + ' QRCode'"
+      @hidden="onModalHidden"
+    >
       <b-container>
         <div id="qrcode" style="width:250; height:250; margin-top:15px;"></div>
       </b-container>
     </b-modal>
-  </b-container>
+  </div>
 </template>
 
 <script>
@@ -112,10 +144,6 @@ export default {
         _this.showCCModal();
       }
     });
-    
-
-    
-    
   },
   beforeDestroy() {
     clearInterval(this.timer);
@@ -127,7 +155,7 @@ export default {
       }
       return this.loggedInFamily.wards;
     },
-    
+
     memberStage() {
       if (this.ccRecord === null) {
         return "";
@@ -159,7 +187,6 @@ export default {
       }
       return this.loggedInMember.first_name;
     },
-    
   },
 
   methods: {
@@ -171,14 +198,21 @@ export default {
     onCheckIn() {
       if (!this.institution.require_survey) {
         this.showCCModal();
-        return
+        return;
       }
       const queryParams = {
         instID: this.institution._id,
         memberID: this.loggedInMember._id,
-      }
-      const queryArgs = queryString.stringify(queryParams)
-      window.location.href = "/surveys/check-in-survey.html?" + queryArgs 
+      };
+      const queryArgs = queryString.stringify(queryParams);
+      window.location.href = "/surveys/check-in-survey.html?" + queryArgs;
+    },
+    onSignOut() {
+      console.log(`onSignOut`);
+      this.$store.commit("resetLoggedInFamily");
+      this.$store.commit("resetLoggedInMember");
+      this.$store.commit("resetInstitution");
+      this.$router.push("/mobile/login");
     },
     onModalHidden() {
       this.syncCCRecordWithDb();
@@ -206,7 +240,7 @@ export default {
       const query = config.API_LOCATION + "cc-record/sync";
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-      http.onreadystatechange = function () {
+      http.onreadystatechange = function() {
         if (this.readyState === 4 && this.status === 200) {
           // var response = JSON.parse(this.responseText);
           var prevCCRecord = _this.ccRecord;
@@ -270,3 +304,57 @@ export default {
   },
 };
 </script>
+
+<style>
+.person-welcome {
+  text-align: center;
+  font: 1.5em sans-serif;
+}
+
+#wrap .profile {
+  position: absolute;
+  height: 38vh;
+  width: 100%;
+  align-self: center;
+  padding-top: 3vh;
+  padding-left: 4rem;
+  padding-right: 4rem;
+}
+
+.person-photo {
+  height: 18vh;
+}
+
+.info {
+  height: 17vh;
+}
+
+.info-text {
+  text-align: center;
+  font-size: 1.5em;
+  margin: 0;
+  padding: 0;
+}
+
+.info-date {
+  text-align: center;
+  font: 1em sans-serif;
+}
+
+#wrap .button-div {
+  padding-top: 38vh;
+  height: 27vh;
+  width: 100%;
+  align-self: center;
+  padding-left: 4rem;
+  padding-right: 4rem;
+}
+
+.checkin-button-div {
+  padding-bottom: 5%;
+}
+
+.signout-button {
+  color: rgb(59, 231, 223);
+}
+</style>

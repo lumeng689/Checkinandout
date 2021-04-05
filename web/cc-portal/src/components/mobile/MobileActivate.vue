@@ -1,21 +1,63 @@
 <template>
-  <b-container>
-    <h4>Activate User</h4>
-    <b-form style="margin-top: 50px;" @submit="onMemberActivate">
-      <b-form-group label="Phone #: " label-align="left" label-for="phone-number-input" description="Phone # is for authentication purpose only">
-        <b-form-input id="phone-number-input" v-model="phoneNum" placeholder="Enter Phone #" required @keyup="focusOut" @blur="focusOut"></b-form-input>
-      </b-form-group>
-      <b-form-group label="Reg. Code" label-align="left" label-for="reg-code-input" description="Please check your email for registration code">
-        <b-form-input id="reg-code-input" v-model="regCode" placeholder="Enter Reg.Code" required @keyup="focusOut" @blur="focusOut"></b-form-input>
-      </b-form-group>
-      <b-row class="ml-1 mb-2">
-        <b-button type="submit" variant="warning">Activate</b-button>
-      </b-row>
-    </b-form>
-    <b-row class="ml-1">
-      <b-button variant="primary" @click="$router.push('/mobile/login')">To Login Page</b-button>
-    </b-row>
-  </b-container>
+    <div id="wrap">
+      <div class="activate-head">
+        <div class="activate-logo">
+          <img class="header-image" src="../../assets/mAIRobotics_Logo_300px.png">
+        </div>
+        <div class="welcome">
+          <p class="welcome-text">First Time User</p>
+        </div>
+      </div>
+   
+      <b-form class="activate-form" @submit="onMemberActivate">
+          <div class="row">
+            <b-input-group>
+              <input
+                id="phone-number-input"
+                type="text" 
+                class="form-control form-rounded form-control-lg"
+                v-model="phoneNum"
+                placeholder="Phone Number"
+                required
+                @keyup="focusOut"
+                @blur="focusOut"
+              >
+            </b-input-group>
+              <p class="notes">
+                * Phone number is for authentication purpose only
+              </p>
+          
+          </div>
+          <div class="row">
+            <b-input-group>
+              <input
+                id="reg-code-input"
+                v-model="regCode"
+                placeholder="Registration Code"
+                type="text" 
+                class="form-control form-rounded form-control-lg"
+                required
+              >
+            </b-input-group>
+              <p class="notes">
+                * Please check your message for registration code
+              </p>
+          
+          </div>
+          <div class="row" id="activate-button-div">
+            <b-button class="activate-button" pill type="submit" block variant="dark" size="lg"
+              > Activate
+              </b-button>
+          </div>
+          <div class="link-to-pages">
+            Not a first time user?
+        <b-link @click="$router.push('/mobile/login')"
+          > Log In</b-link
+        >
+      </div>
+        
+      </b-form>
+    </div>
 </template>
 
 <script>
@@ -70,9 +112,9 @@ export default {
         // On Success, set LoggedInMember and Login
         (response) => {
           // Determine if Family Mode should be used
-          console.log(`onMemberLogin response - ${response}`)
-          var member = response.member
-          var family = response.family
+          console.log(`onMemberLogin response - ${response}`);
+          var member = response.member;
+          var family = response.family;
           if (!member) return;
           _this.$store.commit("setLoggedInMember", member);
           if (family) _this.$store.commit("setLoggedInFamily", family);
@@ -96,7 +138,7 @@ export default {
       console.log(`activateGuaridanInDb - query: ${query}`);
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-      http.onreadystatechange = function () {
+      http.onreadystatechange = function() {
         if (this.readyState === 4 && this.status === 200) {
           if (successCallback != null) {
             successCallback();
@@ -134,7 +176,7 @@ export default {
       const query = config.API_LOCATION + "member/login";
       http.open("POST", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-      http.onreadystatechange = function () {
+      http.onreadystatechange = function() {
         if (this.readyState === 4 && this.status === 200) {
           var responseData = JSON.parse(this.responseText).data;
           if (responseData && successCallback != null) {
@@ -174,7 +216,7 @@ export default {
       console.log(`MobileLogin - getInst query: ${query}`);
       http.open("GET", query, true);
       http.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-      http.onreadystatechange = function () {
+      http.onreadystatechange = function() {
         if (this.readyState === 4 && this.status === 200) {
           // console.log(this.responseText)
           if (this.responseText.length == 0) {
@@ -197,3 +239,48 @@ export default {
   },
 };
 </script>
+
+<style>
+
+#wrap .activate-head {
+  height: 30vh;
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  padding: 5vh;
+}
+
+.activate-logo{
+  height: 15vh;
+}
+
+#wrap .activate-form {
+  position: absolute;
+  height: 60vh;
+  width: 100%;
+  align-self: center;
+  padding-left: 4rem;
+  padding-right: 4rem;
+}
+
+.notes{
+  font-size: 0.8rem;
+  padding-top: 2%;
+}
+
+#reg-code-input{
+  border-radius: 50px;
+  background-color: rgba(182, 182, 182, 0.658);
+  border: 0;
+}
+
+#activate-button-div { 
+  padding-top: 16vh;
+  text-transform: uppercase;
+}
+
+.activate-button{
+  color:rgb(59, 231, 223);
+}
+
+</style>
