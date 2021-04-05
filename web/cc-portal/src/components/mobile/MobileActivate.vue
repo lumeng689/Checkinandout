@@ -52,7 +52,7 @@
           <div class="link-to-pages">
             Not a first time user?
         <b-link @click="$router.push('/mobile/login')"
-          > Log In</b-link
+          > <span class="link-text">Log In</span></b-link
         >
       </div>
         
@@ -273,7 +273,7 @@ export default {
 
 #reg-code-input{
   border-radius: 50px;
-  background-color: rgba(182, 182, 182, 0.658);
+  background-color: rgb(231, 231, 231);
   border: 0;
 }
 
@@ -284,6 +284,7 @@ export default {
 
 .activate-button{
   color:rgb(59, 231, 223);
+  font: Proxima Nova;
 }
 
 </style>

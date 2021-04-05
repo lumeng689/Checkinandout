@@ -42,7 +42,7 @@
       <div class="link-to-pages">
         First time user?
         <b-link @click="$router.push('/mobile/activate')"
-          > Active Account
+          > <span class="link-text">Active Account</span>
         </b-link>
       </div>
     </b-form>
@@ -200,13 +200,14 @@ export default {
 }
 
 .header-image {
-  width: 25vh;
+  width: 22vh;
   height: 4vh;
 }
 
 .welcome {
   text-align: center;
-  font: 2em sans-serif;
+  font: Proxima Nova;
+  font-size: 1.8rem;
 }
 
 .welcome-text {
@@ -216,7 +217,7 @@ export default {
 
 #phone-number-input {
   border-radius: 50px;
-  background-color: rgba(182, 182, 182, 0.568);
+  background-color: rgb(231, 231, 231);
   border: 0;
 }
 
@@ -244,4 +245,12 @@ export default {
   padding-top: 5%;
   font-size: 1rem;
 }
+
+.link-text {
+  color:rgb(59, 231, 223);
+  font: Proxima Nova;
+  font-weight: bold;
+}
+
+
 </style>

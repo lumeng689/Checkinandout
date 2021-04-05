@@ -13,7 +13,7 @@
     </div>
     <div class="profile">
       <div class="person-photo">
-        <b-avatar size="7em"></b-avatar>
+        <b-icon icon="person-circle" class="person" font-scale="9rem"></b-icon>
       </div>
       <div class="info">
         <p class="info-text">Welcome Back</p>
@@ -26,7 +26,6 @@
           class="checkin-button"
           pill
           block
-          variant="outline-dark"
           size="lg"
           @click="onCheckIn"
         >
@@ -312,7 +311,9 @@ export default {
 <style>
 .person-welcome {
   text-align: center;
-  font: 1.5em sans-serif;
+  font: Proxima Nova;
+  font-size: 1.5rem;
+  font-weight: bold;
 }
 
 #wrap .profile {
@@ -326,7 +327,11 @@ export default {
 }
 
 .person-photo {
-  height: 18vh;
+  height: 20vh;
+}
+
+.person {
+  color:rgb(59, 231, 223);
 }
 
 .info {
@@ -336,13 +341,16 @@ export default {
 .info-text {
   text-align: center;
   font-size: 1.5em;
+  font: Proxima Nova;
   margin: 0;
   padding: 0;
 }
 
 .info-date {
   text-align: center;
-  font: 1em sans-serif;
+  font: Proxima Nova;
+  font-size: 1rem;
+  font-weight: bold;
 }
 
 #wrap .button-div {
@@ -358,7 +366,15 @@ export default {
   padding-bottom: 5%;
 }
 
+.checkin-button {
+  border: 0;
+  background-color: rgb(231, 231, 231);
+  color: black;
+  font: Proxima Nova;
+}
+
 .signout-button {
   color: rgb(59, 231, 223);
+  font: Proxima Nova;
 }
 </style>
