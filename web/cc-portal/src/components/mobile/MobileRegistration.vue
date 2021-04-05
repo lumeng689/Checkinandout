@@ -33,7 +33,7 @@
       </div>
       <div class="link-to-pages">
         Already have an account?
-        <b-link @click="$router.push('/mobile/login')">Log In</b-link>
+        <b-link @click="$router.push('/mobile/login')"><span class="link-text">Log In</span></b-link>
       </div>
     </b-form>
   </div>
@@ -130,7 +130,7 @@ export default {
 #first-name-input,
 #last-name-input {
   border-radius: 50px;
-  background-color: rgba(182, 182, 182, 0.658);
+  background-color: rgb(231, 231, 231);
   border: 0;
 }
 

@@ -73,9 +73,9 @@ export default {
 
 <style>
 .background-image{
- background-image: url("../../assets/background.png");
+ background-image: url("../../assets/Background Image.png");
  background-size: 100vw;
  background-repeat: no-repeat;
- background-color: rgb(250, 250, 250);
+ background-color: rgb(255, 255, 255);
 }
 </style>
