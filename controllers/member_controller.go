@@ -264,6 +264,10 @@ func (s *CCServer) LoginMember(c *gin.Context) {
 	return
 }
 
+func (s *CCServer) CreateMemberAndSendSMS(c *gin.Context) {
+
+}
+
 // UpdateMemberByID - as is
 func (s *CCServer) UpdateMemberByID(c *gin.Context) {
 	// perform Update

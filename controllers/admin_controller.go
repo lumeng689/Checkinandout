@@ -198,6 +198,7 @@ func (s *CCServer) UpdateAdminByID(c *gin.Context) {
 	var adminForm svc.AdminEditForm
 	c.BindJSON(&adminForm)
 
+	adminForm.FrasUsername = strings.ToLower(strings.TrimSpace(adminForm.FrasUsername))
 	idToUpdate := c.Param("id")
 	res, err := svc.UpdateAdminByID(adminForm, idToUpdate)
 	if err != nil {

@@ -1,10 +1,25 @@
 {
     "log_file_name": "log.json",
     "services": {
-        "mongo_server_uri": "mongodb://cc-mongodb:27017",
-        "server_address": "http://35.225.35.49:31593",
+        "mongo_server_uri": "mongodb://localhost:27017",
+        "server_address": "http://192.168.9.1:8000",
         "require_check_out_temperature": true,
         "require_admin_password": true,
-        "temperature_threshold": 99.2
+        "temperature_threshold": 99.2,
+        "debug_token_list": {
+            "super_admin": "disable_after_debug_done_sa",
+            "admin": "disable_after_debug_done_admin",
+            "mobile": "disable_after_debug_done_mobile"
+        },
+        "sms_config": {
+            "account_sid": "AC61389296221b860447ed00967abf77b5",
+            "from_phone_num": "+19169933295"
+        },
+        "email_config": {
+            "smtp_host":"smtp.gmail.com",
+            "smtp_port":"587",
+            "from_email:_addr":"notifications.cc.app@gmail.com",
+            "from_email_pswd":"Wrightrobotics123"
+        }
     }
 }
