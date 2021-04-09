@@ -254,6 +254,7 @@ export default {
 }
 
 .activate-logo{
+  padding-top: 6vh;
   height: 15vh;
 }
 

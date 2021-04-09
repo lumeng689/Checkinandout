@@ -197,6 +197,7 @@ export default {
 
 .logo {
   height: 27vh;
+  padding-top: 6vh;
 }
 
 .header-image {
