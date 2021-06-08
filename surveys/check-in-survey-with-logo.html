@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, shrink-to-fit=no"
+    />
+    <style>
+      table {
+        font-family: arial, sans-serif;
+        border-collapse: collapse;
+        width: 100%;
+      }
+
+      td,
+      th {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+      }
+
+      tr:nth-child(even) {
+        background-color: #dddddd;
+      }
+
+      .top-header {
+        width: 100%;
+        height: 60px;
+        margin: 10px 20px 10px 20px;
+        display: flex;
+        flex-direction: row;
+        justify-content: start;
+        align-items: center;
+      }
+
+      .top-header img {
+        height: 100%;
+        width: auto;
+      }
+    </style>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="./check-in-survey.js"></script>
+  </head>
+  <body>
+    <div class="container-fluid">
+      <header class="top-header">
+        <img src="https://www.wrightrobotics.com/wp-content/uploads/2020/08/Wright-Robotics-Logo-Color-Portrait.png" />
+      </header>
+      <h3>Survey Page</h3>
+      <ol>
+        <li>
+          <h5>Are you experiencing:</h5>
+          <table>
+            <tr>
+              <th>Symptom</th>
+              <th>Apply</th>
+            </tr>
+            <tr>
+              <td id="q0">Cough?</td>
+              <td>
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                  <label class="btn btn-outline-primary">
+                    <input type="radio" id="bool-0-0-1" name="bool-0-0" value="1" autocomplete="off" />
+                    YES
+                  </label>
+                  <label class="btn btn-outline-success">
+                    <input type="radio" id="bool-0-0-0" name="bool-0-0" value="0" autocomplete="off"/>
+                    NO
+                  </label>
+                </div>
+                <!-- <input type="radio" id="bool-0-0-1" name="bool-0-0" value="1" />
+                <label for="bool-0-0-1">Yes</label>
+                <input type="radio" id="bool-0-0-0" name="bool-0-0" value="0" />
+                <label for="bool-0-0-0">No</label> -->
+              </td>
+            </tr>
+            <tr>
+              <td id="q1">Fever?</td>
+              <td>
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                  <label class="btn btn-outline-primary">
+                    <input type="radio" id="bool-0-1-1" name="bool-0-1" value="1" autocomplete="off" />
+                    YES
+                  </label>
+                  <label class="btn btn-outline-success">
+                    <input type="radio" id="bool-0-1-0" name="bool-0-1" value="0" autocomplete="off"/>
+                    NO
+                  </label>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td id="q2">Shortness of Breath?</td>
+              <td>
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                  <label class="btn btn-outline-primary">
+                    <input type="radio" id="bool-0-2-1" name="bool-0-2" value="1" autocomplete="off" />
+                    YES
+                  </label>
+                  <label class="btn btn-outline-success">
+                    <input type="radio" id="bool-0-2-0" name="bool-0-2" value="0" autocomplete="off"/>
+                    NO
+                  </label>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td id="q3">Sore Throat?</td>
+              <td>
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                  <label class="btn btn-outline-primary">
+                    <input type="radio" id="bool-0-3-1" name="bool-0-3" value="1" autocomplete="off" />
+                    YES
+                  </label>
+                  <label class="btn btn-outline-success">
+                    <input type="radio" id="bool-0-3-0" name="bool-0-3" value="0" autocomplete="off"/>
+                    NO
+                  </label>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td id="q4">Diarrhea?</td>
+              <td>
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                  <label class="btn btn-outline-primary">
+                    <input type="radio" id="bool-0-4-1" name="bool-0-4" value="1" autocomplete="off" />
+                    YES
+                  </label>
+                  <label class="btn btn-outline-success">
+                    <input type="radio" id="bool-0-4-0" name="bool-0-4" value="0" autocomplete="off"/>
+                    NO
+                  </label>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td id="q5">Headaches?</td>
+              <td>
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                  <label class="btn btn-outline-primary">
+                    <input type="radio" id="bool-0-5-1" name="bool-0-5" value="1" autocomplete="off" />
+                    YES
+                  </label>
+                  <label class="btn btn-outline-success">
+                    <input type="radio" id="bool-0-5-0" name="bool-0-5" value="0" autocomplete="off"/>
+                    NO
+                  </label>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td id="q6">Unusual Fatigue?</td>
+              <td>
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                  <label class="btn btn-outline-primary">
+                    <input type="radio" id="bool-0-6-1" name="bool-0-6" value="1" autocomplete="off" />
+                    YES
+                  </label>
+                  <label class="btn btn-outline-success">
+                    <input type="radio" id="bool-0-6-0" name="bool-0-6" value="0" autocomplete="off"/>
+                    NO
+                  </label>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td id="q7">Loss of taste or smell?</td>
+              <td>
+                <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                  <label class="btn btn-outline-primary">
+                    <input type="radio" id="bool-0-7-1" name="bool-0-7" value="1" autocomplete="off" />
+                    YES
+                  </label>
+                  <label class="btn btn-outline-success">
+                    <input type="radio" id="bool-0-7-0" name="bool-0-7" value="0" autocomplete="off"/>
+                    NO
+                  </label>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </li>
+        <li>
+          <div id="q8">Have you traveled out of the country in the last 14 day? </div>
+          <p>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+              <label class="btn btn-outline-primary">
+                <input type="radio" id="bool-1-0-1" name="bool-1" value="1" autocomplete="off" />
+                YES
+              </label>
+              <label class="btn btn-outline-success">
+                <input type="radio" id="bool-1-0-0" name="bool-1" value="0" autocomplete="off"/>
+                NO
+              </label>
+            </div>
+          </p>
+        </li>
+        <li>
+          <div id="q9">Have you been in contact with anyone who has traveled outside the
+            country?</div>
+          <p>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+              <label class="btn btn-outline-primary">
+                <input type="radio" id="bool-2-0-1" name="bool-2" value="1" autocomplete="off" />
+                YES
+              </label>
+              <label class="btn btn-outline-success">
+                <input type="radio" id="bool-2-0-0" name="bool-2" value="0" autocomplete="off"/>
+                NO
+              </label>
+            </div>
+          </p>
+        </li>
+        <li>
+          <div id="q10">Have you been diagnosed to the Covid-19 Disease?</div>
+          <p>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+              <label class="btn btn-outline-primary">
+                <input type="radio" id="bool-3-0-1" name="bool-3" value="1" autocomplete="off" />
+                YES
+              </label>
+              <label class="btn btn-outline-success">
+                <input type="radio" id="bool-3-0-0" name="bool-3" value="0" autocomplete="off"/>
+                NO
+              </label>
+            </div>
+          </p>
+        </li>
+        <li>
+          <div id="q11">Have you been exposed to the Covid-19 Disease?</div>
+          <p>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+              <label class="btn btn-outline-primary">
+                <input type="radio" id="bool-4-0-1" name="bool-4" value="1" autocomplete="off" />
+                YES
+              </label>
+              <label class="btn btn-outline-success">
+                <input type="radio" id="bool-4-0-0" name="bool-4" value="0" autocomplete="off"/>
+                NO
+              </label>
+            </div>
+          </p>
+        </li>
+        <li>
+          <div id="q12">Have you been tested for the Covid-19?</div>
+          <p>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+              <label class="btn btn-outline-primary">
+                <input type="radio" id="bool-5-0-1" name="bool-5" value="1" autocomplete="off" />
+                YES
+              </label>
+              <label class="btn btn-outline-success">
+                <input type="radio" id="bool-5-0-0" name="bool-5" value="0" autocomplete="off"/>
+                NO
+              </label>
+            </div>
+          </p>
+        </li>
+        <li>
+          <div id="q13">Have you been around anyone with cough, cold, fever, SOB, or
+            potentially may have Covid-19?
+          </div>
+          <p>
+            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+              <label class="btn btn-outline-primary">
+                <input type="radio" id="bool-6-0-1" name="bool-6" value="1" autocomplete="off" />
+                YES
+              </label>
+              <label class="btn btn-outline-success">
+                <input type="radio" id="bool-6-0-0" name="bool-6" value="0" autocomplete="off"/>
+                NO
+              </label>
+            </div>
+          </p>
+        </li>
+        <li>
+          <div id="q14">What is the reason for your visit today?</div>
+          <p>
+            <textarea style="width: 80%" id="text-0-0" rows="7"></textarea>
+          </p>
+        </li>
+      </ol>
+      <div>
+        <button type="submit" class="btn btn-primary" onClick="submitSurvey()">Submit</button>
+      </div>
+    </div>
+    <div class="modal fade" id="surveyFailModal" tabindex="-1" aria-labelledby="surveyFailModalLabel" aria-hidden="true">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">You May Not Proceed</h5>
+            <button type="button" class="btn-close" aria-label="Close" onClick="onCloseModal()"></button>
+          </div>
+          <div class="modal-body">
+            You haven't cleared the Covid Questionnaire. Please get in touch with the administration team at the clinic.
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" onClick="onCloseModal()">Close</button>
+          </div>
+        </div>
+    </div>
+  </body>
+</html>

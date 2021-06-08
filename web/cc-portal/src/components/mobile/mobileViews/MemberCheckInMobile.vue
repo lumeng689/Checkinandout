@@ -206,7 +206,11 @@ export default {
         memberID: this.loggedInMember._id,
       };
       const queryArgs = queryString.stringify(queryParams);
-      window.location.href = "/surveys/check-in-survey.html?" + queryArgs;
+      var survey_file = 'check-in-survey.html'
+      if (this.institution.survey_file) {
+        survey_file = this.institution.survey_file;
+      }
+      window.location.href = `/surveys/${survey_file}?` + queryArgs
     },
     onSignOut() {
       console.log(`onSignOut`);

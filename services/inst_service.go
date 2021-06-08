@@ -46,6 +46,7 @@ type InstitutionForm struct {
 	State                string `json:"state" validate:"required,state"`
 	ZipCode              string `json:"zip_code" validate:"required,zip_code"`
 	RequireSurvey        bool   `json:"require_survey"`
+	SurveyFile           string `json:"survey_file"`
 }
 
 // Institution - DB Model for Institution
@@ -61,6 +62,7 @@ type Institution struct {
 	State                string             `json:"state"`
 	ZipCode              string             `bson:"zip_code" json:"zip_code"`
 	RequireSurvey        bool               `bson:"require_survey" json:"require_survey"`
+	SurveyFile           string             `bson:"survey_file" json:"survey_file"`
 	CreatedAt            time.Time          `bson:"created_at" json:"created_at"`
 	ModifiedAt           time.Time          `bson:"modified_at" json:"modified_at"`
 }
@@ -124,6 +126,7 @@ func CreateInst(i InstitutionForm) (*mongo.InsertOneResult, error) {
 		State:                i.State,
 		ZipCode:              i.ZipCode,
 		RequireSurvey:        i.RequireSurvey,
+		SurveyFile:           i.SurveyFile,
 		CreatedAt:            time.Now(),
 		ModifiedAt:           time.Now(),
 	}
@@ -145,6 +148,7 @@ func UpdateInstByID(i InstitutionForm, idToUpdate string) (*mongo.UpdateResult, 
 			primitive.E{Key: "state", Value: i.State},
 			primitive.E{Key: "zip_code", Value: i.ZipCode},
 			primitive.E{Key: "require_survey", Value: i.RequireSurvey},
+			primitive.E{Key: "survey_file", Value: i.SurveyFile},
 		}},
 		primitive.E{Key: "$currentDate", Value: bson.D{
 			primitive.E{Key: "modified_at", Value: true},
