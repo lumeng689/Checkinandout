@@ -2,7 +2,7 @@
     "log_file_name": "log.json",
     "services": {
         "mongo_server_uri": "mongodb://cc-mongodb:27017",
-        "server_address": "http://35.225.35.49:31593",
+        "server_address": "http://34.67.110.140:31593/",
         "require_check_out_temperature": true,
         "require_admin_password": true,
         "temperature_threshold": 99.2
