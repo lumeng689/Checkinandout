@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
@@ -114,6 +115,8 @@ func CountInstByName(name string) (int64, error) {
 // CreateInst as name suggests
 func CreateInst(i InstitutionForm) (*mongo.InsertOneResult, error) {
 	// requireSurvey, _ := strconv.ParseBool(i.RequireSurvey)
+
+	fmt.Printf("%+v\n", i)
 	newInst := Institution{
 		ID:                   primitive.NewObjectID(),
 		Type:                 InstType(i.Type),

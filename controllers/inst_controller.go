@@ -67,6 +67,7 @@ func (s *CCServer) GetInstByID(c *gin.Context) {
 
 // CreateInst - as is
 func (s *CCServer) CreateInst(c *gin.Context) {
+	log.Println("OK_1")
 	var instForm svc.InstitutionForm
 	c.BindJSON(&instForm)
 	log.Printf("instForm received - %v\n", instForm)
